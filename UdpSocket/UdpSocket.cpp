@@ -17,15 +17,18 @@
 
 using namespace std;
 
-UdpSocket::UdpSocket() {
+UdpSocket::UdpSocket(bool blocking) {
 	socketFd=socket(AF_INET6, SOCK_DGRAM, 0);
 	if(socketFd==INVALID_SOCKET){
 		printf("Could not create UdpSocket.\n");
 	}
+	if(!blocking) {
+		fcntl(socketFd, F_SETFL, O_NONBLOCK);
+	}
 }
 
 UdpSocket::~UdpSocket() {
-	close(socketFd);
+	::close(socketFd);
 }
 
 UdpSocket::Address UdpSocket::to_address(const std::string& hostAddr, uint16_t portNumber) {
@@ -172,6 +175,10 @@ bool UdpSocket::listen(uint16_t portNumber) {
 	fcntl(socketFd, F_SETFL, O_NONBLOCK);
 	return true;
 	*/
+}
+
+void UdpSocket::close() {
+	::close(socketFd);
 }
 
 void UdpSocket::set_destination(const Address& address) {

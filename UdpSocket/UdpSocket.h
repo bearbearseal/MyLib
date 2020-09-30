@@ -24,11 +24,12 @@ public:
 		struct sockaddr_in6 hisAddress;
 	};
 
-	UdpSocket();
+	UdpSocket(bool blocking=true);
 	~UdpSocket();
 	static Address to_address(const std::string& hostAddr, uint16_t portNumber);
 	static std::pair<std::string, uint16_t> to_ip_and_port(const Address& address);
 	bool listen(uint16_t portNumber);
+	void close();
 	void set_destination(const Address& address);
 	//bool set_destination(const std::string& hostAddr, uint16_t portNumber);
 	std::string read();

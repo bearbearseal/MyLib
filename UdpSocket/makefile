@@ -4,7 +4,7 @@ CFLAGS = -Wall -c
 LFLAGS = -Wall
 LIBS = -lpthread
 #INC = -I../Basic
-binaries = theMain
+binaries = theMain.out
 
 main : $(OBJS)
 	$(CC) $(LFLAGS) $(OBJS) $(LIBS) -o $(binaries)

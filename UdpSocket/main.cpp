@@ -3,7 +3,7 @@
 
 int main(){
 	UdpSocket aSocket;
-	if(!aSocket.listen(9999)){
+	if(!aSocket.listen(9989)){
 		printf("Udp socket listen failed.\n");
 		return 1;
 	}
