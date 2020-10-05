@@ -34,6 +34,9 @@ private:
 		bool send_message_to_socket(size_t destSocketId, T& message, size_t sourceSocketId) {
 			return master.send_message_to_socket(destSocketId, message, sourceSocketId);
 		}
+		bool send_message_to_socket(size_t destSocketId, T message, size_t sourceSocketId) {
+			return master.send_message_to_socket(destSocketId, message, sourceSocketId);
+		}
 		void delete_socket(size_t socketId) {
 			master.delete_socket(socketId);
 		}
@@ -66,6 +69,13 @@ public:
 			}
 		}
 		bool message_to_socket(size_t socketId, T& message) {
+			auto shared = masterProxy.lock();
+			if (shared != nullptr) {
+				return shared->send_message_to_socket(socketId, message, myId);
+			}
+			return false;
+		}
+		bool message_to_socket(size_t socketId, const T& message) {
 			auto shared = masterProxy.lock();
 			if (shared != nullptr) {
 				return shared->send_message_to_socket(socketId, message, myId);
@@ -107,6 +117,9 @@ public:
 		bool send_message(T& message) {
 			return Socket::message_to_socket(hisId, message);
 		}
+		bool send_message(const T& message) {
+			return Socket::message_to_socket(hisId, message);
+		}
 	private:
 		size_t hisId;
 	};
@@ -130,7 +143,7 @@ public:
 		}
 	}
 
-	std::shared_ptr<Socket> create_socket(size_t socketId) {
+	std::unique_ptr<Socket> create_socket(size_t socketId) {
 		std::unique_lock<std::mutex> locker(dataMapLock);
 		auto i = id2SocketDataMap.find(socketId);
 		if (i != id2SocketDataMap.end())
@@ -140,10 +153,10 @@ public:
 		id2SocketDataMap[socketId];
 		auto& j = id2SignalDataMap[socketId];
 		j.closing = false;
-		return std::make_shared<Socket>(socketId, myProxy);
+		return std::make_unique<Socket>(socketId, myProxy);
 	}
 	
-	std::shared_ptr<FixedSocket> create_fixed_socket(size_t myId, size_t hisId) {
+	std::unique_ptr<FixedSocket> create_fixed_socket(size_t myId, size_t hisId) {
 		std::unique_lock<std::mutex> locker(dataMapLock);
 		auto i = id2SocketDataMap.find(myId);
 		if (i != id2SocketDataMap.end())
@@ -153,7 +166,7 @@ public:
 		id2SocketDataMap[myId];
 		auto& j = id2SignalDataMap[myId];
 		j.closing = false;
-		return std::make_shared<FixedSocket>(myId, hisId, myProxy);
+		return std::make_unique<FixedSocket>(myId, hisId, myProxy);
 	}
 
 private:

@@ -25,6 +25,7 @@ namespace HashKey
 		size_t operator()(const EitherKey& me) const;
 		EitherKey& operator=(const EitherKey& theOther);
 
+		std::string uni_string() const;
 		std::string to_string() const;
 		bool is_integer() const;
 		int64_t get_integer() const;
@@ -123,6 +124,18 @@ inline HashKey::EitherKey& HashKey::EitherKey::operator=(const EitherKey& theOth
 		intValue = theOther.intValue;
 	}
 	return *this;
+}
+
+inline std::string HashKey::EitherKey::uni_string() const {
+	switch (keyType)
+	{
+	case KeyType::Integer:
+		return std::to_string(intValue);
+	case KeyType::String:
+		return stringValue;
+	default:
+		return "Unknown";
+	}
 }
 
 inline std::string HashKey::EitherKey::to_string() const
