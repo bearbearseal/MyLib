@@ -29,6 +29,7 @@ bool Variable::write_value(const Value& newValue, uint8_t priority) {
 	//clear those priority lower than input priority.
 	writeValue.clear_lower(priority);
 	_write_value(newValue);
+	return true;
 }
 
 void Variable::update_value_to_cache(const Value& newValue) {

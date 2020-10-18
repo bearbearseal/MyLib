@@ -18,8 +18,16 @@
 
 class UdpSocket {
 public:
-	struct Address{
+	class Address{
 		friend class UdpSocket;
+	public:
+		std::pair<std::string, uint16_t> to_address_and_port() const {
+			return to_ip_and_port(*this);
+		}
+		const sockaddr_in6& get_raw() const { return hisAddress; }
+		bool is_ipv4() const;
+		bool is_ipv6() const;
+		//bool operator==(const Address& theOther);
 	private:
 		struct sockaddr_in6 hisAddress;
 	};

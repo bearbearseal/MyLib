@@ -68,6 +68,13 @@ bool Sqlite3::execute_update(const std::string& update, ...) {
     va_start(parameters, update);
     vsprintf(tempBuffer, update.c_str(), parameters);
     va_end(parameters);
+    char* zErrMessage = nullptr;
+    int result = sqlite3_exec(db, tempBuffer, nullptr, nullptr, &zErrMessage);
+    if(result != SQLITE_OK) {
+        printf("Error code: %d\nMessage: %s\n", result, zErrMessage);
+        //throw SqliteError;
+        throw Exception(Sqlite3::ErrorCode::SqliteError, zErrMessage, result);
+    }
     return true;
 }
 
@@ -101,17 +108,17 @@ pair<bool, const string&> Sqlite3::ResultSet::get_string(size_t row, const std::
     return { data[row][i->second].first, data[row][i->second].second };
 }
 
-pair<bool, int> Sqlite3::ResultSet::get_integer(size_t row, size_t column) {
+pair<bool, int64_t> Sqlite3::ResultSet::get_integer(size_t row, size_t column) {
     if(row > data.size()) {
         throw InvalidRow;
     }
     if(column > names.size()) {
         throw InvalidColumn;
     }
-    return {data[row][column].first, stoi(data[row][column].second)};
+    return {data[row][column].first, stol(data[row][column].second)};
 }
 
-pair<bool, int> Sqlite3::ResultSet::get_integer(size_t row, const std::string& column) {
+pair<bool, int64_t> Sqlite3::ResultSet::get_integer(size_t row, const std::string& column) {
     if(row > data.size()) {
         throw InvalidRow;
     }
@@ -119,7 +126,7 @@ pair<bool, int> Sqlite3::ResultSet::get_integer(size_t row, const std::string& c
     if(i == names.end()) {
         throw InvalidColumn;
     }
-    return {data[row][i->second].first, stoi(data[row][i->second].second)};
+    return {data[row][i->second].first, stol(data[row][i->second].second)};
 }
 
 pair<bool, double> Sqlite3::ResultSet::get_float(size_t row, size_t column) {

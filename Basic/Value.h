@@ -71,10 +71,11 @@ public:
 	void set_float(double);
 	void set_string(const std::string&);
 	void set_time(std::chrono::system_clock::time_point);
-	void set_object(const std::unordered_map<HashKey::EitherKey, Value, HashKey::EitherKey>&);
+	void set_object(const std::unordered_map<HashKey::EitherKey, Value, HashKey::EitherKeyHash>&);
 	void clear_object();
 
 	std::string to_string() const;
+	void from_string(const std::string& formattedString);
 
 	//Operators
 	void operator=(const Value&);
@@ -102,7 +103,7 @@ private:
 		double* floatValue;
 		std::string* stringValue;
 		std::chrono::system_clock::time_point* timeValue;
-		std::unordered_map<HashKey::EitherKey, Value, HashKey::EitherKey>* objectValue;
+		std::unordered_map<HashKey::EitherKey, Value, HashKey::EitherKeyHash>* objectValue;
 		char* pointed;
 	};
 	Data data = { NULL };

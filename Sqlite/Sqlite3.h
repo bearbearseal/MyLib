@@ -16,7 +16,7 @@ public:
     };
     class Exception {
     public:
-        Exception(ErrorCode _code, const std::string& _message, int _subCode = 0) : code(_code), message(_message), subCode(_subCode) {}
+        Exception(ErrorCode _code, const std::string& _message, int _subCode = 0) : code(_code), subCode(_subCode), message(_message) {}
         const ErrorCode code;
         const int subCode;
         const std::string message;
@@ -32,8 +32,8 @@ public:
         ~ResultSet();
         std::pair<bool, const std::string&> get_string(size_t row, size_t column);
         std::pair<bool, const std::string&> get_string(size_t row, const std::string& column);
-        std::pair<bool, int> get_integer(size_t row, size_t column);
-        std::pair<bool, int> get_integer(size_t row, const std::string& column);
+        std::pair<bool, int64_t> get_integer(size_t row, size_t column);
+        std::pair<bool, int64_t> get_integer(size_t row, const std::string& column);
         std::pair<bool, double> get_float(size_t row, size_t column);
         std::pair<bool, double> get_float(size_t row, const std::string& column);
         size_t get_row_count();

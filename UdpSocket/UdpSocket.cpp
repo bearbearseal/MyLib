@@ -40,15 +40,15 @@ UdpSocket::Address UdpSocket::to_address(const std::string& hostAddr, uint16_t p
 	hints.ai_socktype = SOCK_DGRAM;
 	int rc;
 	struct in6_addr serverAddr;
-	rc=inet_pton(AF_INET, hostAddr.c_str(), &serverAddr);
+	rc=inet_pton(AF_INET6, hostAddr.c_str(), &serverAddr);
 	if(rc==1) {
-		hints.ai_family = AF_INET;
+		hints.ai_family = AF_INET6;
 		hints.ai_flags |= AI_NUMERICHOST;
 	}
 	else {
-		rc = inet_pton(AF_INET6, hostAddr.c_str(), &serverAddr);
+		rc = inet_pton(AF_INET, hostAddr.c_str(), &serverAddr);
 		if(rc==1) {
-			hints.ai_family = AF_INET6;
+			hints.ai_family = AF_INET;
 			hints.ai_flags |= AI_NUMERICHOST;
 		}
 		else {
@@ -86,6 +86,44 @@ UdpSocket::Address UdpSocket::to_address(const std::string& hostAddr, uint16_t p
 	return retVal;
 }
 
+bool UdpSocket::Address::is_ipv4() const {
+	return (hisAddress.sin6_family == AF_INET);
+}
+
+bool UdpSocket::Address::is_ipv6() const {
+	return (hisAddress.sin6_family == AF_INET6);
+}
+
+/*
+bool UdpSocket::Address::operator==(const Address& theOther) {
+	if(hisAddress.sin6_family == AF_INET6) {
+		if(theOther.hisAddress.sin6_family == AF_INET6) {
+			if(!memcmp(&hisAddress.sin6_addr, &theOther.hisAddress.sin6_addr, sizeof(hisAddress.sin6_addr))) {
+				if(!memcmp(&hisAddress.sin6_port, &theOther.hisAddress.sin6_port, sizeof(hisAddress.sin6_port))) {
+					return true;
+				}
+			}
+		}
+	}
+	else if(hisAddress.sin6_family == AF_INET) {
+		if(theOther.hisAddress.sin6_family == AF_INET) {
+			if(!memcmp(&hisAddress.sin6_addr, &theOther.hisAddress.sin6_addr, sizeof(hisAddress.sin6_addr))) {
+				if(!memcmp(&hisAddress.sin6_port, &theOther.hisAddress.sin6_port, sizeof(hisAddress.sin6_port))) {
+					return true;
+				}
+			}
+		}
+	}
+	return false;
+}
+* */
+/*
+size_t UdpSocket::Address::hash() {
+	std::hash<string> hasher;
+	string hashSubject(&hisAddress.sin6_addr, sizeof(hisAddress.sin6_addr));
+	return hasher(hashSubject);
+}
+*/
 std::pair<std::string, uint16_t> UdpSocket::to_ip_and_port(const Address& address) {
 	string sourceIp;
 	uint16_t sourcePortNumber;

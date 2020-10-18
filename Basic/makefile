@@ -1,4 +1,5 @@
-OBJS = main.o PrioritizedValue.o Value.o
+OBJS = main.o 
+#OBJS += PrioritizedValue.o Value.o
 CC = g++ -std=c++17
 CFLAGS = -Wall -c
 LFLAGS = -Wall
@@ -9,7 +10,7 @@ binaries = theMain.out
 main : $(OBJS)
 	$(CC) $(LFLAGS) $(OBJS) $(LIBS) -o $(binaries)
 
-main.o : main.cpp
+main.o : main.cpp HashKey.h
 	$(CC) $(CFLAGS) main.cpp
 
 PrioritizedValue.o : PrioritizedValue.h PrioritizedValue.cpp

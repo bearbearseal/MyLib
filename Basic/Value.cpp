@@ -278,13 +278,13 @@ void Value::set_time(std::chrono::system_clock::time_point newValue)
 	*(data.timeValue) = newValue;
 }
 
-void Value::set_object(const std::unordered_map<HashKey::EitherKey, Value, HashKey::EitherKey>& newValue)
+void Value::set_object(const std::unordered_map<HashKey::EitherKey, Value, HashKey::EitherKeyHash>& newValue)
 {
 	if (type != Type::Time)
 	{
 		delete_data();
 		type = Type::Object;
-		data.objectValue = new std::unordered_map<HashKey::EitherKey, Value, HashKey::EitherKey>();
+		data.objectValue = new std::unordered_map<HashKey::EitherKey, Value, HashKey::EitherKeyHash>();
 	}
 	*(data.objectValue) = newValue;
 }
@@ -303,7 +303,7 @@ string Value::to_string() const
 	switch (type)
 	{
 	case Type::Integer:
-		retVal = "I:";
+		retVal = "i:";
 		retVal += ::to_string(*(data.intValue));
 		break;
 	case Type::Float:
@@ -334,6 +334,20 @@ string Value::to_string() const
 	}
 	return retVal;
 }
+
+void Value::from_string(const std::string& formattedString) {
+	if(!formattedString.compare(0, 2, "i:")) {
+		set_value(stol(formattedString.substr(2, string::npos)));
+	}
+	else if(!formattedString.compare(0, 2, "f:")) {
+		set_value(stod(formattedString.substr(2, string::npos)));
+	}
+	else if(!formattedString.compare(0, 2, "s:")) {
+		set_value(formattedString.substr(2, string::npos));
+	}
+	set_value(formattedString);
+}
+
 
 const Value& Value::get_value(const HashKey::EitherKey& mapKey) const
 {
