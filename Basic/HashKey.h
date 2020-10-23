@@ -189,14 +189,12 @@ inline void HashKey::EitherKey::from_formatted_string(const std::string& formatt
 	if(formattedString.find("i:") == 0) {
 		intValue = stol(formattedString.substr(2, std::string::npos));
 		keyType = KeyType::Integer;
-		printf("to integer: %ld\n", intValue);
 	}
 	else if(formattedString.find("s:") == 0) {
 		stringValue = formattedString.substr(2, std::string::npos);
 		keyType = KeyType::String;
 	}
 	else{
-		printf("formatted string: %s\n", formattedString.c_str());
 		keyType = KeyType::None;
 	}
 }
