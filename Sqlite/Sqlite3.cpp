@@ -115,7 +115,7 @@ pair<bool, int64_t> Sqlite3::ResultSet::get_integer(size_t row, size_t column) {
     if(column > names.size()) {
         throw InvalidColumn;
     }
-    return {data[row][column].first, stol(data[row][column].second)};
+    return {data[row][column].first, stoll(data[row][column].second)};
 }
 
 pair<bool, int64_t> Sqlite3::ResultSet::get_integer(size_t row, const std::string& column) {
@@ -126,7 +126,7 @@ pair<bool, int64_t> Sqlite3::ResultSet::get_integer(size_t row, const std::strin
     if(i == names.end()) {
         throw InvalidColumn;
     }
-    return {data[row][i->second].first, stol(data[row][i->second].second)};
+    return {data[row][i->second].first, stoll(data[row][i->second].second)};
 }
 
 pair<bool, double> Sqlite3::ResultSet::get_float(size_t row, size_t column) {
