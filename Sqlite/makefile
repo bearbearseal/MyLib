@@ -3,7 +3,7 @@ CC = g++ -std=c++17
 CFLAGS = -Wall -c
 LFLAGS = -Wall
 LIBS = -lsqlite3
-binaries = theMain
+binaries = theMain.out
 
 main : $(OBJS)
 	$(CC) $(LFLAGS) $(OBJS) $(LIBS) -o $(binaries)

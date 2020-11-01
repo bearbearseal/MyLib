@@ -132,7 +132,7 @@ int64_t Value::get_int() const
 	case Type::Integer:
 		return *(data.intValue);
 	case Type::Float:
-		return (int64_t)* (data.floatValue);
+		return int64_t(*(data.floatValue));
 	default:
 		return 0;
 	}
@@ -345,7 +345,9 @@ void Value::from_string(const std::string& formattedString) {
 	else if(!formattedString.compare(0, 2, "s:")) {
 		set_value(formattedString.substr(2, string::npos));
 	}
-	set_value(formattedString);
+	else {
+		set_value(formattedString);
+	}
 }
 
 
@@ -464,12 +466,12 @@ Value Value::operator%(const Value& right) const
 
 bool Value::operator==(const Value& right) const
 {
-	if (type != right.type) {
+	if (right.is_empty() && !is_empty()) {
 		return false;
 	}
 	switch (type) {
 	case Type::None:
-		return true;
+		return right.is_empty();
 	case Type::Integer:
 		return (get_int() == right.get_int());
 	case Type::Float:

@@ -134,12 +134,12 @@ bool TcpListener::SingleConnection::write(const std::string& message) {
 void TcpListener::SingleConnection::thread_process(SingleConnection* me) {
 	printf("Socket thread starting.\n");
 	while (1) {
-		printf("Pulling message.\n");
+		//printf("Pulling message.\n");
 		auto input = me->socket->read();
 		if (input.first) {
 			auto shared = me->master.lock();
 			if (shared != nullptr) {
-				printf("Incoming message: %s\n", input.second.c_str());
+				//printf("Incoming message: %s\n", input.second.c_str());
 				shared->catch_message(input.second, (size_t) me->socket.get());
 			}
 		}
