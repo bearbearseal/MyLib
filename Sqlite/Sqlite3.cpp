@@ -9,6 +9,7 @@ using namespace std;
 const Sqlite3::Exception Sqlite3::OpenFailed = {Sqlite3::ErrorCode::OpenFailed, "Open Failed"};
 const Sqlite3::Exception Sqlite3::InvalidRow = {Sqlite3::ErrorCode::InvalidRow, "Invalid Row"};
 const Sqlite3::Exception Sqlite3::InvalidColumn = {Sqlite3::ErrorCode::InvalidColumn, "Invalid Column"};
+const string emptyString("");
 
 Sqlite3::Sqlite3(const std::string& name) {
     db = nullptr;
@@ -81,13 +82,24 @@ bool Sqlite3::execute_update(const std::string& update, ...) {
 Sqlite3::ResultSet::ResultSet(std::vector<std::vector<std::pair<bool, std::string>>>& _data, std::unordered_map<std::string, size_t>& _names) {
     data = move(_data);
     names = move(_names);
+    columnNames.resize(names.size());
+    for(auto i=names.begin(); i!=names.end(); ++i) {
+        columnNames[i->second] = i->first;
+    }
 }
 
 Sqlite3::ResultSet::~ResultSet() {
 
 }
 
-pair<bool, const string&> Sqlite3::ResultSet::get_string(size_t row, size_t column) {
+const string& Sqlite3::ResultSet::get_column_name(size_t index) const {
+    if(index >= columnNames.size()) {
+        return emptyString;
+    }
+    return columnNames[index];
+}
+
+pair<bool, const string&> Sqlite3::ResultSet::get_string(size_t row, size_t column) const {
     if(row > data.size()) {
         throw InvalidRow;
     }
@@ -97,7 +109,7 @@ pair<bool, const string&> Sqlite3::ResultSet::get_string(size_t row, size_t colu
     return { data[row][column].first, data[row][column].second };
 }
 
-pair<bool, const string&> Sqlite3::ResultSet::get_string(size_t row, const std::string& column) {
+pair<bool, const string&> Sqlite3::ResultSet::get_string(size_t row, const std::string& column) const {
     if(row > data.size()) {
         throw InvalidRow;
     }
@@ -108,7 +120,7 @@ pair<bool, const string&> Sqlite3::ResultSet::get_string(size_t row, const std::
     return { data[row][i->second].first, data[row][i->second].second };
 }
 
-pair<bool, int64_t> Sqlite3::ResultSet::get_integer(size_t row, size_t column) {
+pair<bool, int64_t> Sqlite3::ResultSet::get_integer(size_t row, size_t column) const {
     if(row > data.size()) {
         throw InvalidRow;
     }
@@ -118,7 +130,7 @@ pair<bool, int64_t> Sqlite3::ResultSet::get_integer(size_t row, size_t column) {
     return {data[row][column].first, stol(data[row][column].second)};
 }
 
-pair<bool, int64_t> Sqlite3::ResultSet::get_integer(size_t row, const std::string& column) {
+pair<bool, int64_t> Sqlite3::ResultSet::get_integer(size_t row, const std::string& column) const {
     if(row > data.size()) {
         throw InvalidRow;
     }
@@ -129,7 +141,7 @@ pair<bool, int64_t> Sqlite3::ResultSet::get_integer(size_t row, const std::strin
     return {data[row][i->second].first, stol(data[row][i->second].second)};
 }
 
-pair<bool, double> Sqlite3::ResultSet::get_float(size_t row, size_t column) {
+pair<bool, double> Sqlite3::ResultSet::get_float(size_t row, size_t column) const {
     if(row > data.size()) {
         throw InvalidRow;
     }
@@ -139,7 +151,7 @@ pair<bool, double> Sqlite3::ResultSet::get_float(size_t row, size_t column) {
     return {data[row][column].first, stod(data[row][column].second)};
 }
 
-pair<bool, double> Sqlite3::ResultSet::get_float(size_t row, const std::string& column) {
+pair<bool, double> Sqlite3::ResultSet::get_float(size_t row, const std::string& column) const {
     if(row > data.size()) {
         throw InvalidRow;
     }
@@ -150,10 +162,10 @@ pair<bool, double> Sqlite3::ResultSet::get_float(size_t row, const std::string& 
     return {data[row][i->second].first, stod(data[row][i->second].second)};
 }
 
-size_t Sqlite3::ResultSet::get_row_count() {
+size_t Sqlite3::ResultSet::get_row_count() const {
     return data.size();
 }
 
-size_t Sqlite3::ResultSet::get_column_count() {
+size_t Sqlite3::ResultSet::get_column_count() const {
     return names.size();
 }

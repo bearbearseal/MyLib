@@ -1,5 +1,13 @@
 #include "FileIOer.h"
 #include <cstring>
+#include <vector>
+#ifdef _WIN32
+#include <Windows.h>
+#endif
+#include <sys/types.h>
+#include <sys/stat.h>
+
+using namespace std;
 
 FileIOer::FileIOer(const std::string _fileName)
 {
@@ -216,3 +224,66 @@ bool FileIOer::clear()
 	fclose(file);
 	return true;
 }
+
+vector<string> tokenize_string(const string& source, char deli) {
+	vector<string> retVal;
+	size_t start = 0;
+	size_t pos = source.find_first_of(deli);
+	while (pos != string::npos) {
+		auto token = source.substr(start, pos - start);
+		retVal.push_back(token);
+		start = pos + 1;
+		pos = source.find_first_of(deli, start);
+	}
+	if (start <= source.size()) {
+		retVal.push_back(source.substr(start, source.size() - start));
+	}
+	return retVal;
+}
+
+bool FileIOer::file_exist(const std::string& name) {
+	if (FILE *file = fopen(name.c_str(), "r")) {
+		fclose(file);
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+
+bool FileIOer::create_folder(const std::string& name) {
+	string pathName;
+	vector<string> tokens = tokenize_string(name, '/');
+	for (size_t i = 0; i < tokens.size(); ++i) {
+		pathName += tokens[i];
+		struct stat info;
+		if (stat(pathName.c_str(), &info) != 0) {
+			//not found
+			//create directory
+#ifdef _WIN32
+			if (CreateDirectoryA(pathName.c_str(), NULL)) {
+				pathName += '/';
+				continue;
+			}
+			return false;
+#else
+			if (!mkdir(pathName.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH)) {
+				pathName += '/';
+				continue;
+			}
+			return false;
+#endif
+		}
+		else if (info.st_mode & S_IFDIR) {
+			//is a directory
+			pathName += '/';
+			continue;
+		}
+		else {
+			//not a directory
+			return false;
+		}
+	}
+	return true;
+}
+

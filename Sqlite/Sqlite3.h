@@ -30,17 +30,19 @@ public:
     public:
         ResultSet(std::vector<std::vector<std::pair<bool, std::string>>>& data, std::unordered_map<std::string, size_t>& names);
         ~ResultSet();
-        std::pair<bool, const std::string&> get_string(size_t row, size_t column);
-        std::pair<bool, const std::string&> get_string(size_t row, const std::string& column);
-        std::pair<bool, int64_t> get_integer(size_t row, size_t column);
-        std::pair<bool, int64_t> get_integer(size_t row, const std::string& column);
-        std::pair<bool, double> get_float(size_t row, size_t column);
-        std::pair<bool, double> get_float(size_t row, const std::string& column);
-        size_t get_row_count();
-        size_t get_column_count();
+        std::pair<bool, const std::string&> get_string(size_t row, size_t column) const;
+        std::pair<bool, const std::string&> get_string(size_t row, const std::string& column) const;
+        std::pair<bool, int64_t> get_integer(size_t row, size_t column) const;
+        std::pair<bool, int64_t> get_integer(size_t row, const std::string& column) const;
+        std::pair<bool, double> get_float(size_t row, size_t column) const;
+        std::pair<bool, double> get_float(size_t row, const std::string& column) const;
+        size_t get_row_count() const;
+        size_t get_column_count() const;
+        const std::string& get_column_name(size_t index) const;
     private:
         std::vector<std::vector<std::pair<bool, std::string>>> data;
         std::unordered_map<std::string, size_t> names;
+        std::vector<std::string> columnNames;
     };
 
     Sqlite3(const std::string& name);

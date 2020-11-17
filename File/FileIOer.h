@@ -21,6 +21,9 @@ public:
 	size_t size();
 	bool clear();
 
+	static bool file_exist(const std::string& name);
+	static bool create_folder(const std::string& name);
+
 private:
 	std::string fileName;
 };
