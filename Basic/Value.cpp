@@ -337,7 +337,7 @@ string Value::to_string() const
 
 void Value::from_string(const std::string& formattedString) {
 	if(!formattedString.compare(0, 2, "i:")) {
-		set_value(stol(formattedString.substr(2, string::npos)));
+		set_value(stoll(formattedString.substr(2, string::npos)));
 	}
 	else if(!formattedString.compare(0, 2, "f:")) {
 		set_value(stod(formattedString.substr(2, string::npos)));
