@@ -1,4 +1,6 @@
-#include "Sqlite3Listener.h"
+#include "Sqlite3TcpListener.h"
+#include "Sqlite3UdpListener.h"
+#include "Sqlite3JsonTalker.h"
 #include "Sqlite3.h"
 #include <sqlite3.h>
 #include <thread>
@@ -33,9 +35,12 @@ namespace Test {
         }
     }
 
-    void run_tcp_listener() {
-        Sqlite3Listener sqlite3Listener(12345, "/var/sqlite/NcuConfig.db");
-        sqlite3Listener.start();
+    void run_tcp_udp_listener() {
+        std::shared_ptr<Sqlite3JsonTalker> jsonTalker = std::make_shared<Sqlite3JsonTalker>("/var/sqlite/NcuConfig.db");
+        Sqlite3TcpListener sqlite3TcpListener(12345, jsonTalker);
+        Sqlite3UdpListener sqlite3UdpListener(12345, jsonTalker);
+        sqlite3TcpListener.start();
+        sqlite3UdpListener.start();
         while(1) {
             std::this_thread::sleep_for(std::chrono::seconds(1));
         }

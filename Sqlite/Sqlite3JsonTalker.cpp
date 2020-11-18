@@ -1,13 +1,13 @@
-#include "Sqlite3Listener.h"
+#include "Sqlite3JsonTalker.h"
 #include "../../OtherLib/nlohmann/json.hpp"
 
 using namespace std;
 
-Sqlite3Listener::Sqlite3Listener(uint16_t portNumber, const std::string& dbName) : TcpListener(portNumber), theDb(dbName) {
+Sqlite3JsonTalker::Sqlite3JsonTalker(const std::string& dbName) : theDb(dbName) {
 
 }
 
-Sqlite3Listener::~Sqlite3Listener() {
+Sqlite3JsonTalker::~Sqlite3JsonTalker() {
 
 }
 
@@ -25,7 +25,7 @@ nlohmann::json to_json(std::unique_ptr<Sqlite3::ResultSet>& resultSet) {
     return retVal;
 }
 
-string Sqlite3Listener::process_message(const string& input) {
+string Sqlite3JsonTalker::execute(const std::string& input) {
     nlohmann::json theReply;
     nlohmann::json theJson;
     try {
@@ -114,24 +114,4 @@ string Sqlite3Listener::process_message(const string& input) {
 	theReply["Status"] = "Bad";
 	theReply["Message"] = "Unknown command";
 	return theReply.dump() + '\n';
-}
-
-void Sqlite3Listener::catch_message(std::string& data, size_t handle) {
-	while (data.size()) {
-		for (unsigned i = 0; i < data.size(); ++i) {
-			if (data[i] == MessageBreak) {
-				partialMessage += data.substr(0, i);
-				data = data.substr(i + 1);
-				if (partialMessage.size() >= MAX_LENGTH) {
-					partialMessage.clear();
-					break;
-				}
-                //process partial message
-                write_message(handle, process_message(partialMessage));
-				partialMessage.clear();
-			}
-		}
-		partialMessage += data;
-		data.clear();
-	}
 }

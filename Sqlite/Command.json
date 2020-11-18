@@ -1,0 +1,7 @@
+[
+{"Command":"Query", "Statement":"Select * from ModbusIpPoint"}
+,
+{"Command":"Query", "Statement":"Select * from KeyValue"}
+,
+{"Command":"Query", "Statement":"Select Equipment, AlarmLogicId from PropertyAlarm"}
+]
