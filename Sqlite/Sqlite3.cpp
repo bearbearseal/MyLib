@@ -26,11 +26,13 @@ Sqlite3::~Sqlite3() {
 }
 
 int select_call_back(void* parameter, int argc, char** argv, char** azColName) {
-    pair<vector<vector<pair<bool, string>>>, unordered_map<string, size_t>>* retVal = (pair<vector<vector<pair<bool, string>>>, unordered_map<string, size_t>>*) parameter;
-    //printf("Size: %lu %lu\n", retVal->first.size(), retVal->second.size());    
-    if(!retVal->second.size()) {
+    tuple<vector<vector<pair<bool, string>>>, unordered_map<string, size_t>, vector<string>>* retVal = (tuple<vector<vector<pair<bool, string>>>, unordered_map<string, size_t>, vector<string>>*) parameter;
+    unordered_map<string, size_t>& name2Index = get<1>(*retVal);
+    vector<string>& columnName = get<2>(*retVal);
+    if(!name2Index.size()) {
         for(int i=0; i<argc; ++i) {
-            retVal->second[azColName[i]] = i;
+            name2Index[azColName[i]] = i;
+            columnName.push_back(azColName[i]);
         }
     }
     vector<pair<bool, string>> row;
@@ -42,7 +44,8 @@ int select_call_back(void* parameter, int argc, char** argv, char** azColName) {
             row.push_back({false, string()});
         }
     }
-    retVal->first.push_back(move(row));
+    vector<vector<pair<bool, string>>>& rowData = get<0>(*retVal);
+    rowData.push_back(move(row));
     return 0;
 }
 
@@ -52,7 +55,7 @@ std::unique_ptr<Sqlite3::ResultSet> Sqlite3::execute_query(const std::string& qu
     va_start(parameters, query);
     vsprintf(tempBuffer, query.c_str(), parameters);
     va_end(parameters);
-    pair<vector<vector<pair<bool, string>>>, unordered_map<string, size_t>> retVal;
+    tuple<vector<vector<pair<bool, string>>>, unordered_map<string, size_t>, vector<string>> retVal;
     char* zErrMessage = nullptr;
     int result = sqlite3_exec(db, tempBuffer, select_call_back, &retVal, &zErrMessage);
     if(result != SQLITE_OK) {
@@ -60,7 +63,7 @@ std::unique_ptr<Sqlite3::ResultSet> Sqlite3::execute_query(const std::string& qu
         //throw SqliteError;
         throw Exception(Sqlite3::ErrorCode::SqliteError, zErrMessage, result);
     }
-    return make_unique<ResultSet>(retVal.first, retVal.second);
+    return make_unique<ResultSet>(get<0>(retVal), get<1>(retVal), get<2>(retVal));
 }
 
 bool Sqlite3::execute_update(const std::string& update, ...) {
@@ -79,13 +82,10 @@ bool Sqlite3::execute_update(const std::string& update, ...) {
     return true;
 }
 
-Sqlite3::ResultSet::ResultSet(std::vector<std::vector<std::pair<bool, std::string>>>& _data, std::unordered_map<std::string, size_t>& _names) {
+Sqlite3::ResultSet::ResultSet(std::vector<std::vector<std::pair<bool, std::string>>>& _data, std::unordered_map<std::string, size_t>& _names, std::vector<std::string>& _columnNames) {
     data = move(_data);
     names = move(_names);
-    columnNames.resize(names.size());
-    for(auto i=names.begin(); i!=names.end(); ++i) {
-        columnNames[i->second] = i->first;
-    }
+    columnNames = move(_columnNames);
 }
 
 Sqlite3::ResultSet::~ResultSet() {

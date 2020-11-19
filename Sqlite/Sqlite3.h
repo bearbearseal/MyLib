@@ -28,7 +28,7 @@ public:
 
     class ResultSet {
     public:
-        ResultSet(std::vector<std::vector<std::pair<bool, std::string>>>& data, std::unordered_map<std::string, size_t>& names);
+        ResultSet(std::vector<std::vector<std::pair<bool, std::string>>>& data, std::unordered_map<std::string, size_t>& names, std::vector<std::string>& columnNames);
         ~ResultSet();
         std::pair<bool, const std::string&> get_string(size_t row, size_t column) const;
         std::pair<bool, const std::string&> get_string(size_t row, const std::string& column) const;
