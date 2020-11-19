@@ -14,13 +14,18 @@ Sqlite3JsonTalker::~Sqlite3JsonTalker() {
 nlohmann::json to_json(std::unique_ptr<Sqlite3::ResultSet>& resultSet) {
     nlohmann::json retVal;
     //retVal.array();
+	nlohmann::json& columnName = retVal["Label"];
+    for(size_t i=0; i<resultSet->get_column_count(); ++i) {
+		columnName.push_back(resultSet->get_column_name(i));
+	}
+	nlohmann::json& columnData = retVal["Value"];
     for(size_t i=0; i<resultSet->get_row_count(); ++i) {
         nlohmann::json row;
         //row.array();
         for(size_t j=0; j<resultSet->get_column_count(); ++j) {
             row.push_back(resultSet->get_string(i, j).second);
         }
-        retVal.push_back(row);
+        columnData.push_back(row);
     }
     return retVal;
 }

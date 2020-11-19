@@ -28,8 +28,8 @@ TcpListener.o: ../TcpSocket/TcpListener.h ../TcpSocket/TcpListener.cpp
 TcpSocket.o: ../TcpSocket/TcpSocket.h ../TcpSocket/TcpSocket.cpp
 	$(CC) $(CFLAGS) ../TcpSocket/TcpSocket.cpp
 
-Sqlite3UdpListener.o: ../UdpSocket/UdpListener.h ../UdpSocket/UdpListener.cpp
-	$(CC) $(CFLAGS) ../UdpSocket/UdpListener.cpp
+Sqlite3UdpListener.o: Sqlite3UdpListener.h Sqlite3UdpListener.cpp
+	$(CC) $(CFLAGS) Sqlite3UdpListener.cpp
 
 UdpListener.o: ../UdpSocket/UdpListener.h ../UdpSocket/UdpListener.cpp
 	$(CC) $(CFLAGS) ../UdpSocket/UdpListener.cpp
