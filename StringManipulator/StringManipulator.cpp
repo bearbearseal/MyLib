@@ -1,5 +1,38 @@
 #include <string.h>
 #include "StringManipulator.h"
+#include <iostream>
+
+using namespace std;
+
+string StringManipulator::Formatter::to_formatted(const std::string& unformatted) {
+	return "";
+}
+
+string replace(const string& source, const string& format, const string& replacement) {
+	string temp = source;
+	string retVal;
+	while(temp.size()) {
+		size_t index = temp.find(format);
+		if(index != string::npos) {
+			retVal += temp.substr(0, index);
+			retVal += replacement;
+			temp = temp.substr(index+2, string::npos);
+		}
+		else {
+			retVal += temp;
+			temp.clear();
+		}
+	}
+	return retVal;
+}
+
+string StringManipulator::Formatter::to_unformatted(const std::string& formatted) {
+	string retVal;
+	retVal = replace(formatted, "\\n", "\n");
+	retVal = replace(retVal, "\\r", "\r");
+	retVal = replace(retVal, "\\t", "\t");
+	return retVal;
+}
 
 StringManipulator::Tokenizer::Tokenizer() {
 }

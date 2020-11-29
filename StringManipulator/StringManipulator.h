@@ -6,6 +6,13 @@
 using namespace std;
 
 namespace StringManipulator {
+	class Formatter {
+	public:
+		Formatter() {}
+		~Formatter() {}
+		static std::string to_formatted(const std::string& unformatter);
+		static std::string to_unformatted(const std::string& formatted);
+	};
 	class Tokenizer {
 	public:
 		Tokenizer();

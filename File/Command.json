@@ -1,0 +1,4 @@
+[
+	{"Command":"OpenFolder", "Name":"TestFolder"}
+	{"Command":"WriteFile_UTF-8", "Name":"aFile.txt", "Content":"dfsdfsf\\nretert gtgf挺\\n悲催fg"}
+]
