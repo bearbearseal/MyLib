@@ -128,6 +128,71 @@ string FileBrowser::handle_write_file_utf8(const nlohmann::json& input) {
     return reply.dump();
 }
 
+string FileBrowser::handle_delete(const nlohmann::json& input) {
+    nlohmann::json reply;
+    if(!input.contains(Property_Name)) {
+        reply[Property_Status] = "Bad";
+        reply[Property_Message] = "Delete need a Name";
+        return reply.dump();
+    }
+    const nlohmann::json& jName = input[Property_Name];
+    if(!jName.is_string()) {
+        reply[Property_Status] = "Bad";
+        reply[Property_Message] = "Name is not a string";
+        return reply.dump();
+    }
+    string sName = currentPath.u8string();
+    sName += "/" + jName.get<string>();
+    if(filesystem::remove(sName)) {
+        reply[Property_Status] = "Good";
+        reply[Property_Name] = sName;
+        return reply.dump();
+    }
+    reply[Property_Status] = "Bad";
+    reply[Property_Message] = "Invalid target";
+    return reply.dump();
+}
+
+string FileBrowser::handle_rename(const nlohmann::json& input) {
+    nlohmann::json reply;
+    if(!input.contains(Property_Name)) {
+        reply[Property_Status] = "Bad";
+        reply[Property_Message] = "Delete need a Name";
+        return reply.dump();
+    }
+    const nlohmann::json& jName = input[Property_Name];
+    if(!jName.is_string()) {
+        reply[Property_Status] = "Bad";
+        reply[Property_Message] = "Name is not a string";
+        return reply.dump();
+    }
+    if(!input.contains(Property_NewName)) {
+        reply[Property_Status] = "Bad";
+        reply[Property_Message] = "Delete need a NewName";
+        return reply.dump();
+    }
+    const nlohmann::json& jNewName = input[Property_NewName];
+    if(!jNewName.is_string()) {
+        reply[Property_Status] = "Bad";
+        reply[Property_Message] = "NewName is not a string";
+        return reply.dump();
+    }
+    string sOldName = currentPath.u8string();
+    sOldName += "/" + jName.get<string>();
+    string sNewName = currentPath.u8string();
+    sNewName += "/" + jNewName.get<string>();
+    std::error_code errorCode;
+    filesystem::rename(sOldName, sNewName, errorCode);
+    if(errorCode.value()) {
+        reply[Property_Status] = "Bad";
+        reply[Property_Message] = errorCode.message();
+        return reply.dump();
+    }
+    reply[Property_Status] = "Good";
+    reply[Property_NewName] = sNewName;
+    return reply.dump();
+}
+
 string FileBrowser::handle_to_parent_folder(const nlohmann::json& input) {
     nlohmann::json reply;
     if(currentPath == rootPath) {
@@ -143,11 +208,24 @@ string FileBrowser::handle_to_parent_folder(const nlohmann::json& input) {
 
 string FileBrowser::handle_show_content(const nlohmann::json& input) {
     nlohmann::json reply;
+    filesystem::path targetPath = currentPath;
     reply[Property_Status] = "Good";
+    if(input.contains(Property_Path)) {
+        const nlohmann::json& jPath = input[Property_Path];
+        if(!jPath.is_string()) {
+            reply[Property_Status] = "Bad";
+            reply[Property_Message] = "Path is not a string";
+            return reply.dump();
+        }
+        cout<<"Request path "<<jPath.get<string>();
+        targetPath.append(jPath.get<string>());
+    }
+    cout<<"Going to show content of "<<targetPath<<endl;
     nlohmann::json& theContent = reply[Property_FolderContent];
-    for(auto it = filesystem::directory_iterator(currentPath); it != filesystem::directory_iterator(); ++it) {
+    for(auto it = filesystem::directory_iterator(targetPath); it != filesystem::directory_iterator(); ++it) {
         nlohmann::json entry;
-        entry[Property_Name] = it->path().u8string();
+        entry[Property_Name] = filesystem::relative(it->path(), rootPath).u8string();
+        //entry[Property_Name] = it->path().u8string();
         if(it->is_regular_file()) {
             entry["Type"] = "Regular";
         }
@@ -178,7 +256,8 @@ string FileBrowser::handle_show_current_path(const nlohmann::json& input) {
 string FileBrowser::handle_to_root(const nlohmann::json& input) {
     nlohmann::json reply;
     reply[Property_Status] = "Good";
-    currentPath.assign(rootPath);
+    //currentPath.assign(rootPath);
+    currentPath = rootPath;
     reply[Property_Name] = rootPath;
     return reply.dump();
 }
@@ -220,6 +299,12 @@ string FileBrowser::parse_command(const string& input) {
     else if(!sCommand.compare(Command_WriteFileUtf8)) {
         return handle_write_file_utf8(theJson);
     }
+    else if(!sCommand.compare(Command_Delete)) {
+        return handle_delete(theJson);
+    }
+    else if(!sCommand.compare(Command_Rename)) {
+        return handle_rename(theJson);
+    }
     else if(!sCommand.compare(Command_ToParentFolder)) {
         return handle_to_parent_folder(theJson);
     }
@@ -227,10 +312,10 @@ string FileBrowser::parse_command(const string& input) {
         return handle_show_content(theJson);
     }
     else if(!sCommand.compare(Command_CurrentPath)) {
-
+        return handle_show_current_path(theJson);
     }
     else if(!sCommand.compare(Command_ToRoot)) {
-
+        return handle_to_root(theJson);
     }
     theReply[Property_Status] = "Bad";
     theReply[Property_Message] = "Unknown Command";
