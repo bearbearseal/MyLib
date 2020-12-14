@@ -15,6 +15,10 @@ private:
     const std::string Command_ShowContent = "Show";
     const std::string Command_CurrentPath = "CurrentPath";
     const std::string Command_ToRoot = "ToRoot";
+    const std::string Command_NewFolder = "NewFolder";
+    const std::string Command_NewFile = "NewFile";
+    const std::string Command_CreateFolder = "CreateFolder";
+    const std::string Command_CreateFile = "CreateFile";
 
     const std::string Property_Command = "Command";
     const std::string Property_Name = "Name";
@@ -45,4 +49,6 @@ private:
     std::string handle_show_content(const nlohmann::json& input);
     std::string handle_show_current_path(const nlohmann::json& input);
     std::string handle_to_root(const nlohmann::json& input);
+    std::string handle_create_folder(const nlohmann::json& input);
+    std::string handle_create_file(const nlohmann::json& input);
 };

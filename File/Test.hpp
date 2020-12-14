@@ -10,6 +10,10 @@ namespace Test {
     void run_file_browser() {
         FileBrowser aFileBrowser("/var/InOutOpt");
         string result;
+        result = aFileBrowser.parse_command("{\"Command\":\"CreateFolder\", \"Name\":\"Folder1\"}");
+        cout<<result<<endl;
+        result = aFileBrowser.parse_command("{\"Command\":\"CreateFile\", \"Name\":\"File1.txt\"}");
+        cout<<result<<endl;
         result = aFileBrowser.parse_command("{\"Command\":\"ToParentFolder\"}");
         cout<<result<<endl;
         result = aFileBrowser.parse_command("{\"Command\":\"Show\"}");
@@ -34,6 +38,7 @@ namespace Test {
         cout<<result<<endl;
         result = aFileBrowser.parse_command("{\"Command\":\"Show\"}");
         cout<<result<<endl;
+        //cout<<"Grand End"<<endl;
     }
 
     void run_udp_file_browser() {
