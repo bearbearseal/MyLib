@@ -47,6 +47,7 @@ string FileBrowser::handle_open_folder(const nlohmann::json& input) {
 
 string FileBrowser::handle_read_file_utf8(const nlohmann::json& input) {
     nlohmann::json reply;
+    //cout<<input.dump()<<endl;
     reply[Property_Command] = Command_ReadFileUtf8;
     if(!input.contains(Property_Name)) {
         reply[Property_Status] = "Bad";
@@ -312,26 +313,34 @@ string FileBrowser::handle_create_folder(const nlohmann::json& input) {
 string FileBrowser::handle_create_file(const nlohmann::json& input) {
     nlohmann::json reply;
     reply[Property_Command] = Command_CreateFile;
+    string filename = currentPath.u8string();
     if(!input.contains(Property_Name)) {
-        reply[Property_Status] = "Bad";
-        reply[Property_Message] = "CreateFolder need a Name";
-        return reply.dump();
+        filename += "/NewFile";
+        string postFix;
+        size_t i = 1;
+        while(filesystem::exists(filename + postFix)) {
+            postFix = "_";
+            postFix += to_string(i);
+            ++i;
+        }
+        filename += postFix;
     }
-    const nlohmann::json& name = input[Property_Name];
-    if(!name.is_string()) {
-        reply[Property_Status] = "Bad";
-        reply[Property_Message] = "Name is not string";
-        return reply.dump();
+    else {
+        const nlohmann::json& name = input[Property_Name];
+        if(!name.is_string()) {
+            reply[Property_Status] = "Bad";
+            reply[Property_Message] = "Name is not string";
+            return reply.dump();
+        }
+        filename += "/";
+        filename += name.get<string>();
+        if(filesystem::exists(filename)) {
+            reply[Property_Status] = "Bad";
+            reply[Property_Message] = "File exist";
+            return reply.dump();
+        }
     }
-    string newName = currentPath.u8string();
-    newName += "/";
-    newName += name.get<string>();
-    if(filesystem::exists(newName)) {
-        reply[Property_Status] = "Bad";
-        reply[Property_Message] = "File exist";
-        return reply.dump();
-    }
-    FileIOer aFile(newName);
+    FileIOer aFile(filename);
     if(!aFile.write_new("")) {
         reply[Property_Status] = "Bad";
         reply[Property_Message] = "File creation failed";
