@@ -4,4 +4,7 @@
 {"Command":"Query", "Statement":"Select * from KeyValue"}
 ,
 {"Command":"Query", "Statement":"Select Equipment, AlarmLogicId from PropertyAlarm"}
+,
+{"Command":"Query", "Statement":"Select name from sqlite_master WHERE type='table'"}
+
 ]

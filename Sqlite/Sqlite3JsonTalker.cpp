@@ -75,7 +75,6 @@ string Sqlite3JsonTalker::execute(const std::string& input) {
 		{
 			lock_guard<mutex> lock(dbMutex);
 			try {
-				printf("Executing command.\n");
 				result = theDb.execute_query(statement);
 			} catch(Sqlite3::Exception e) {
 				theReply["Status"] = "Bad";
