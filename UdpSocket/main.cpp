@@ -14,7 +14,7 @@ int main(){
 	UdpSocket::Address hisAddress;
 	auto anotherAddress = UdpSocket::to_address("127.0.0.1", 65535);
 	auto ori = UdpSocket::to_ip_and_port(anotherAddress);
-		printf("Ori %s:%u\n", ori.first.c_str(), ori.second);
+	printf("Ori %s:%u\n", ori.first.c_str(), ori.second);
 	aSocket.set_destination(anotherAddress);
 	while(1){
 		//incoming = aSocket.read(hisIpAddress, hisPort);

@@ -60,12 +60,12 @@ string Sqlite3JsonTalker::execute(const std::string& input) {
 	nlohmann::json& jStatement = theJson[Property_Statement];
 	if (!jCommand.is_string()) {
 		theReply["Status"] = "Bad";
-		theReply["Message"] = "Unknown command data type";
+		theReply["Message"] = "Command should be string type";
 		return theReply.dump() + '\n';
 	}
 	if (!jStatement.is_string()) {
 		theReply["Status"] = "Bad";
-		theReply["Message"] = "Unknown statement data type";
+		theReply["Message"] = "Statement should be string type";
 		return theReply.dump() + '\n';
 	}
     string command = jCommand.get<string>();
