@@ -1,6 +1,6 @@
 #include "FileIOer.h"
 #include "FileBrowser.h"
-#include "FileBrowserUdpListener.h"
+#include "UdpFileBrowser.h"
 #include <iostream>
 #include <thread>
 
@@ -42,7 +42,7 @@ namespace Test {
     }
 
     void run_udp_file_browser() {
-        FileBrowserUdpListener udpFileBrowser(12345, "/var/InOutOpt");
+        UdpFileBrowser udpFileBrowser(12345, "/var/InOutOpt");
         udpFileBrowser.start();
         while(1) {
             this_thread::sleep_for(1s);

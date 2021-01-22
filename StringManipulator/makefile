@@ -1,17 +1,17 @@
-OBJS = main.o StringManipulator.o
-CC = g++ -std=c++17
-CFLAGS = -Wall -c
-LFLAGS = -Wall
-binaries = theMain.out
+SRC_DIR = .
+OBJ_DIR = ./obj
+SRC_FILES = $(wildcard $(SRC_DIR)/*.cpp)
+OBJ_FILES = $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRC_FILES))
+LDFLAGS = -Wall
+CPPFLAGS = -Wall -c
+CPPC = g++ -std=c++17
+BINARY = Built/theMain.out
 
-main : $(OBJS)
-	$(CC) $(LFLAGS) $(OBJS) $(LIBS) -o $(binaries)
+$(BINARY): $(OBJ_FILES)
+	$(CPPC) $(LDFLAGS) -o $@ $^
 
-main.o : main.cpp
-	$(CC) $(CFLAGS) main.cpp
-
-StringManipulator.o : StringManipulator.h StringManipulator.cpp
-	$(CC) $(CFLAGS) StringManipulator.cpp
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
+	$(CPPC) $(CPPFLAGS) -o $@ $<
 
 clean:
-	rm -f $(binaries) *.o
+	rm -f $(BINARY) *.o

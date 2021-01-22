@@ -3,10 +3,10 @@
 #include "../UdpSocket/UdpListener.h"
 #include "FileBrowser.h"
 
-class FileBrowserUdpListener : public UdpListener {
+class UdpFileBrowser : public UdpListener {
 public:
-    FileBrowserUdpListener(uint16_t portNumber, const std::string& folderPath);
-    ~FileBrowserUdpListener();
+    UdpFileBrowser(uint16_t portNumber, const std::string& folderPath);
+    ~UdpFileBrowser();
 
 private:
     void catch_message(std::string& data, const UdpSocket::Address& hisAddress);
