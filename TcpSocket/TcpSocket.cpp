@@ -25,19 +25,19 @@ TcpSocket::TcpSocket(bool blocking)
 
 TcpSocket::~TcpSocket()
 {
-	if(socketFd != -1)
+	if (socketFd != -1)
 	{
 		::close(socketFd);
 	}
-	if(serverAddress != NULL)
+	if (serverAddress != NULL)
 	{
 		freeaddrinfo(serverAddress);
 	}
 }
 
-void TcpSocket::set_host(const std::string& host, uint16_t portNumber)
+void TcpSocket::set_host(const std::string &host, uint16_t portNumber)
 {
-	if(serverAddress != NULL)
+	if (serverAddress != NULL)
 	{
 		freeaddrinfo(serverAddress);
 	}
@@ -48,8 +48,8 @@ void TcpSocket::set_host(const std::string& host, uint16_t portNumber)
 	hints.ai_socktype = SOCK_STREAM;
 	int rc;
 	struct in6_addr serverAddr;
-	rc=inet_pton(AF_INET, host.c_str(), &serverAddr);
-	if(rc == 1)
+	rc = inet_pton(AF_INET, host.c_str(), &serverAddr);
+	if (rc == 1)
 	{
 		hints.ai_family = AF_INET;
 		hints.ai_flags |= AI_NUMERICHOST;
@@ -57,7 +57,7 @@ void TcpSocket::set_host(const std::string& host, uint16_t portNumber)
 	else
 	{
 		rc = inet_pton(AF_INET6, host.c_str(), &serverAddr);
-		if(rc==1)
+		if (rc == 1)
 		{
 			hints.ai_family = AF_INET6;
 			hints.ai_flags |= AI_NUMERICHOST;
@@ -65,14 +65,14 @@ void TcpSocket::set_host(const std::string& host, uint16_t portNumber)
 	}
 	rc = getaddrinfo(host.c_str(), std::to_string(portNumber).c_str(), &hints, &serverAddress);
 	hisAddress.sin6_family = serverAddress->ai_family;
-	if(hisAddress.sin6_family == AF_INET)
+	if (hisAddress.sin6_family == AF_INET)
 	{
 		struct sockaddr_in *addr;
 		addr = (struct sockaddr_in *)serverAddress->ai_addr;
 		memcpy(&hisAddress.sin6_addr, &addr->sin_addr, sizeof(hisAddress.sin6_addr) > sizeof(addr->sin_addr) ? sizeof(addr->sin_addr) : sizeof(hisAddress.sin6_addr));
 		hisAddress.sin6_port = addr->sin_port;
 	}
-	else if(hisAddress.sin6_family == AF_INET6)
+	else if (hisAddress.sin6_family == AF_INET6)
 	{
 		struct sockaddr_in6 *addr;
 		addr = (struct sockaddr_in6 *)serverAddress->ai_addr;
@@ -83,34 +83,34 @@ void TcpSocket::set_host(const std::string& host, uint16_t portNumber)
 
 bool TcpSocket::open()
 {
-	if(serverAddress == NULL)
+	if (serverAddress == NULL)
 	{
 		printf("Server Address not known.\n");
 		return false;
 	}
-	if(socketFd != -1)
+	if (socketFd != -1)
 	{
 		::close(socketFd);
 		socketFd = -1;
 	}
 	socketFd = socket(serverAddress->ai_family, serverAddress->ai_socktype, serverAddress->ai_protocol);
 	if (socketFd == -1)
-    {
-        printf("Could not create socket");
-        return false;
-    }
-    int optionValue = 1;
-    if(setsockopt(socketFd, SOL_SOCKET, SO_REUSEADDR, &optionValue, sizeof(optionValue)))
-    {
-    	printf("Warning, set socket reuse address failed.\n");
-    }
-    if(!block)
-    {
-    	fcntl(socketFd, F_SETFL, O_NONBLOCK);
-    }
-	if (connect(socketFd , serverAddress->ai_addr, serverAddress->ai_addrlen) < 0)
 	{
-		switch(errno)
+		printf("Could not create socket");
+		return false;
+	}
+	int optionValue = 1;
+	if (setsockopt(socketFd, SOL_SOCKET, SO_REUSEADDR, &optionValue, sizeof(optionValue)))
+	{
+		printf("Warning, set socket reuse address failed.\n");
+	}
+	if (!block)
+	{
+		fcntl(socketFd, F_SETFL, O_NONBLOCK);
+	}
+	if (connect(socketFd, serverAddress->ai_addr, serverAddress->ai_addrlen) < 0)
+	{
+		switch (errno)
 		{
 		case EINPROGRESS:
 			return true;
@@ -123,7 +123,7 @@ bool TcpSocket::open()
 	return true;
 }
 
-bool TcpSocket::open(const std::string& host, uint16_t portNumber)
+bool TcpSocket::open(const std::string &host, uint16_t portNumber)
 {
 	set_host(host, portNumber);
 	return open();
@@ -131,9 +131,9 @@ bool TcpSocket::open(const std::string& host, uint16_t portNumber)
 
 bool TcpSocket::connection_established()
 {
-	if (connect(socketFd , serverAddress->ai_addr, serverAddress->ai_addrlen) < 0)
+	if (connect(socketFd, serverAddress->ai_addr, serverAddress->ai_addrlen) < 0)
 	{
-		if(errno == EISCONN)
+		if (errno == EISCONN)
 		{
 			return true;
 		}
@@ -144,87 +144,87 @@ bool TcpSocket::connection_established()
 
 bool TcpSocket::listen(uint16_t portNumber)
 {
-	if(socketFd == -1)
+	if (socketFd == -1)
 	{
-	    socketFd = socket(AF_INET6 , SOCK_STREAM , 0);
-	    if (socketFd == -1)
-	    {
-	        printf("Could not create socket");
-	        return false;
-	    }
-	    int optionValue = 1;
-	    if(setsockopt(socketFd, SOL_SOCKET, SO_REUSEADDR, &optionValue, sizeof(optionValue)))
-	    {
-	    	printf("Warning, set socket reuse address failed.\n");
-	    }
+		socketFd = socket(AF_INET6, SOCK_STREAM, 0);
+		if (socketFd == -1)
+		{
+			printf("Could not create socket");
+			return false;
+		}
+		int optionValue = 1;
+		if (setsockopt(socketFd, SOL_SOCKET, SO_REUSEADDR, &optionValue, sizeof(optionValue)))
+		{
+			printf("Warning, set socket reuse address failed.\n");
+		}
 	}
 	memset(&hisAddress, 0, sizeof(hisAddress));
-    hisAddress.sin6_family = AF_INET6;
-    hisAddress.sin6_addr = in6addr_any;
-    hisAddress.sin6_port = htons(portNumber);
-    if(!block)
-    {
-    	fcntl(socketFd, F_SETFL, O_NONBLOCK);
-    }
-    if(bind(socketFd,(struct sockaddr *) &hisAddress , sizeof(hisAddress)) < 0)
-    {
-        printf("bind failed. Error.\n");
-        return false;
-    }
-    ::listen(socketFd, 1024);
+	hisAddress.sin6_family = AF_INET6;
+	hisAddress.sin6_addr = in6addr_any;
+	hisAddress.sin6_port = htons(portNumber);
+	if (!block)
+	{
+		fcntl(socketFd, F_SETFL, O_NONBLOCK);
+	}
+	if (bind(socketFd, (struct sockaddr *)&hisAddress, sizeof(hisAddress)) < 0)
+	{
+		printf("bind failed. Error.\n");
+		return false;
+	}
+	::listen(socketFd, 1024);
 	return true;
 }
 
 bool TcpSocket::accept()
 {
-    unsigned addressSize = sizeof(hisAddress);
-    int newSocketFd = ::accept(socketFd, (sockaddr*) &hisAddress, &addressSize);
-    if(newSocketFd < 0)
-    {
-    	return false;
-    }
-    ::close(socketFd);
-    socketFd = newSocketFd;
-    if(!block)
-    {
-    	fcntl(socketFd, F_SETFL, O_NONBLOCK);
-    }
-    return true;
+	unsigned addressSize = sizeof(hisAddress);
+	int newSocketFd = ::accept(socketFd, (sockaddr *)&hisAddress, &addressSize);
+	if (newSocketFd < 0)
+	{
+		return false;
+	}
+	::close(socketFd);
+	socketFd = newSocketFd;
+	if (!block)
+	{
+		fcntl(socketFd, F_SETFL, O_NONBLOCK);
+	}
+	return true;
 }
 
-bool TcpSocket::accept(TcpSocket& newSocket)
+bool TcpSocket::accept(TcpSocket &newSocket)
 {
 	newSocket.socketFd = -1;
-    unsigned addressSize = sizeof(newSocket.hisAddress);
-    newSocket.socketFd = ::accept(socketFd, (sockaddr*) &newSocket.hisAddress, &addressSize);
-    if(!block)
-    {
-    	fcntl(newSocket.socketFd, F_SETFL, O_NONBLOCK);
-    }
-	if(newSocket.socketFd != -1)
+	unsigned addressSize = sizeof(newSocket.hisAddress);
+	newSocket.socketFd = ::accept(socketFd, (sockaddr *)&newSocket.hisAddress, &addressSize);
+	if (!block)
+	{
+		fcntl(newSocket.socketFd, F_SETFL, O_NONBLOCK);
+	}
+	if (newSocket.socketFd != -1)
 	{
 		return true;
 	}
-    return false;
+	return false;
 }
 
-bool TcpSocket::write(const std::string& data)
+bool TcpSocket::write(const std::string &data)
 {
-	if(send(socketFd, data.c_str(), data.size(), 0) < 0)
+	if (send(socketFd, data.c_str(), data.size(), 0) < 0)
 	{
-        printf("Send failed");
-        return false;
-    }
+		printf("Send failed");
+		return false;
+	}
 	return true;
 }
 
 pair<bool, string> TcpSocket::read(bool dontWait)
 {
-	std::string retVal;
+	pair<bool, string> retVal;
 	char receiver[1024];
 	int length;
 	int flags;
-	if(dontWait)
+	if (dontWait)
 	{
 		flags = MSG_DONTWAIT;
 	}
@@ -235,31 +235,36 @@ pair<bool, string> TcpSocket::read(bool dontWait)
 	do
 	{
 		length = recv(socketFd, receiver, sizeof(receiver), flags);
-		if(length < 0)
+		if (length < 0)
 		{
 			//if also non-blocking
-			switch(errno)
+			switch (errno)
 			{
 			case EWOULDBLOCK:
-				return {true, retVal};
+				retVal.first = true;
+				return retVal;
 			}
-			return {false, retVal};
+			retVal.first = false;
+			return retVal;
 		}
-		else if(length>0)
+		else if (length > 0)
 		{
-			retVal.append(receiver, length);
+			retVal.second.append(receiver, length);
 		}
-		else	//peer closed socket
+		else //peer closed socket
 		{
-			return {false, retVal};
+			printf("Peer closed socket.\n");
+			retVal.first= false;
+			return retVal;
 		}
-	}while(length == sizeof(receiver));
-	return {true, retVal};
+	} while (length == sizeof(receiver));
+	retVal.first = true;
+	return retVal;
 }
 
 bool TcpSocket::is_valid()
 {
-	if(socketFd == -1)
+	if (socketFd == -1)
 	{
 		return false;
 	}
@@ -270,9 +275,10 @@ bool TcpSocket::connected()
 {
 	char buffer;
 	int err = recv(socketFd, &buffer, sizeof(buffer), MSG_PEEK);
-	if(err < 0){
+	if (err < 0)
+	{
 		//printf("Error number: %d %d.\n", err, errno);
-		switch(errno)
+		switch (errno)
 		{
 		case EWOULDBLOCK:
 			return true;
@@ -291,7 +297,7 @@ std::string TcpSocket::get_his_ip()
 {
 	char retVal[64];
 	memset(retVal, 0x00, sizeof(retVal));
-	inet_ntop(((sockaddr*) &hisAddress)->sa_family, &hisAddress.sin6_addr, retVal, sizeof(retVal));
+	inet_ntop(((sockaddr *)&hisAddress)->sa_family, &hisAddress.sin6_addr, retVal, sizeof(retVal));
 	return retVal;
 }
 
@@ -299,5 +305,3 @@ uint16_t TcpSocket::get_his_port()
 {
 	return ntohs(hisAddress.sin6_port);
 }
-
-

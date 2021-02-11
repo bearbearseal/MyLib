@@ -27,123 +27,155 @@ public:
 		T message;
 	};
 private:
-	class Proxy {
+	class Proxy
+	{
 	public:
-		Proxy(ITC& _master) : master(_master) {}
+		Proxy(ITC &_master) : master(_master) {}
 		~Proxy() {}
-		bool send_message_to_socket(size_t destSocketId, T& message, size_t sourceSocketId) {
+		bool send_message_to_socket(size_t destSocketId, T &message, size_t sourceSocketId)
+		{
 			return master.send_message_to_socket(destSocketId, message, sourceSocketId);
 		}
-		bool send_message_to_socket(size_t destSocketId, T message, size_t sourceSocketId) {
+		/*
+		bool send_message_to_socket(size_t destSocketId, T message, size_t sourceSocketId)
+		{
 			return master.send_message_to_socket(destSocketId, message, sourceSocketId);
 		}
-		void delete_socket(size_t socketId) {
+		*/
+		void delete_socket(size_t socketId)
+		{
 			master.delete_socket(socketId);
 		}
-		InData get_message(size_t socketId) {
+		InData get_message(size_t socketId)
+		{
 			return master.get_message(socketId);
 		}
-		bool wait_message(size_t socketId) {
+		bool wait_message(size_t socketId)
+		{
 			return master.wait_message(socketId);
 		}
-		bool has_message(size_t socketId) {
+		bool has_message(size_t socketId)
+		{
 			return master.has_message(socketId);
 		}
 
 	private:
-		ITC& master;
+		ITC &master;
 	};
 public:
 	class Socket
 	{
 		friend class ITC;
 	public:
-		Socket(size_t socketId, std::shared_ptr<Proxy> _masterProxy) {
+		Socket(size_t socketId, std::shared_ptr<Proxy> _masterProxy)
+		{
 			myId = socketId;
 			masterProxy = _masterProxy;
 		}
-		virtual ~Socket() {
+		virtual ~Socket()
+		{
 			auto shared = masterProxy.lock();
-			if (shared != nullptr) {
+			if (shared != nullptr)
+			{
 				shared->delete_socket(myId);
 			}
 		}
-		bool message_to_socket(size_t socketId, T& message) {
+		bool message_to_socket(size_t socketId, T &message)
+		{
 			auto shared = masterProxy.lock();
-			if (shared != nullptr) {
+			if (shared != nullptr)
+			{
 				return shared->send_message_to_socket(socketId, message, myId);
 			}
 			return false;
 		}
-		bool message_to_socket(size_t socketId, const T& message) {
+		bool message_to_socket(size_t socketId, const T &message)
+		{
 			auto shared = masterProxy.lock();
-			if (shared != nullptr) {
+			if (shared != nullptr)
+			{
 				return shared->send_message_to_socket(socketId, message, myId);
 			}
 			return false;
 		}
-		InData get_message() {
+		InData get_message()
+		{
 			auto shared = masterProxy.lock();
-			if (shared != nullptr) {
+			if (shared != nullptr)
+			{
 				return shared->get_message(myId);
 			}
 			return InData();
 		}
-		bool wait_message() {
+		bool wait_message()
+		{
 			auto shared = masterProxy.lock();
-			if (shared != nullptr) {
+			if (shared != nullptr)
+			{
 				return shared->wait_message(myId);
 			}
 			return false;
 		}
-		bool has_message() {
+		bool has_message()
+		{
 			auto shared = masterProxy.lock();
 			return shared->has_message(myId);
 		}
-		size_t get_id() {
+		size_t get_id()
+		{
 			return myId;
 		}
+
 	private:
 		std::weak_ptr<Proxy> masterProxy;
 		size_t myId;
 	};
 
-	class FixedSocket : public Socket {
+	class FixedSocket : public Socket
+	{
 	public:
-		FixedSocket(size_t myId, size_t _hisId, std::shared_ptr<Proxy> _masterProxy) : Socket(myId, _masterProxy) {
+		FixedSocket(size_t myId, size_t _hisId, std::shared_ptr<Proxy> _masterProxy) : Socket(myId, _masterProxy)
+		{
 			hisId = _hisId;
 		}
 		virtual ~FixedSocket() {}
-		bool send_message(T& message) {
+		bool send_message(T &message)
+		{
 			return Socket::message_to_socket(hisId, message);
 		}
-		bool send_message(const T& message) {
+		bool send_message(const T &message)
+		{
 			return Socket::message_to_socket(hisId, message);
 		}
+
 	private:
 		size_t hisId;
 	};
 
 	ITC() { myProxy = std::make_shared<Proxy>(*this); }
-	~ITC() { 
+	~ITC()
+	{
 		std::weak_ptr<Proxy> proxyShadow = myProxy;
 		myProxy.reset();
 		//Notify all
 		{
 			std::lock_guard<std::mutex> locker(dataMapLock);
-			for (auto i = id2SignalDataMap.begin(); i != id2SignalDataMap.end(); ++i) {
+			for (auto i = id2SignalDataMap.begin(); i != id2SignalDataMap.end(); ++i)
+			{
 				std::unique_lock<std::mutex> lock(i->second.waitMutex);
 				i->second.closing = true;
 				i->second.waitCondition.notify_one();
 			}
 		}
-		//Make sure no one is accessing this proxy before ending 
-		while (proxyShadow.lock() != nullptr) {
+		//Make sure no one is accessing this proxy before ending
+		while (proxyShadow.lock() != nullptr)
+		{
 			std::this_thread::yield();
 		}
 	}
 
-	std::unique_ptr<Socket> create_socket(size_t socketId) {
+	std::unique_ptr<Socket> create_socket(size_t socketId)
+	{
 		std::unique_lock<std::mutex> locker(dataMapLock);
 		auto i = id2SocketDataMap.find(socketId);
 		if (i != id2SocketDataMap.end())
@@ -151,12 +183,13 @@ public:
 			return nullptr;
 		}
 		id2SocketDataMap[socketId];
-		auto& j = id2SignalDataMap[socketId];
+		auto &j = id2SignalDataMap[socketId];
 		j.closing = false;
 		return std::make_unique<Socket>(socketId, myProxy);
 	}
-	
-	std::unique_ptr<FixedSocket> create_fixed_socket(size_t myId, size_t hisId) {
+
+	std::unique_ptr<FixedSocket> create_fixed_socket(size_t myId, size_t hisId)
+	{
 		std::unique_lock<std::mutex> locker(dataMapLock);
 		auto i = id2SocketDataMap.find(myId);
 		if (i != id2SocketDataMap.end())
@@ -164,14 +197,14 @@ public:
 			return nullptr;
 		}
 		id2SocketDataMap[myId];
-		auto& j = id2SignalDataMap[myId];
+		auto &j = id2SignalDataMap[myId];
 		j.closing = false;
 		return std::make_unique<FixedSocket>(myId, hisId, myProxy);
 	}
 
 private:
 	//messages would be moved
-	bool send_message_to_socket(size_t destSocketId, T& message, size_t sourceSocketId)
+	bool send_message_to_socket(size_t destSocketId, T &message, size_t sourceSocketId)
 	{
 		std::lock_guard<std::mutex> locker(dataMapLock);
 		auto i = id2SocketDataMap.find(destSocketId);
@@ -180,7 +213,7 @@ private:
 			return false;
 		}
 		std::lock_guard<std::mutex> lock2(i->second.dataMutex);
-		i->second.data.push_back({ sourceSocketId, std::move(message) });
+		i->second.data.push_back({sourceSocketId, std::move(message)});
 		auto j = id2SignalDataMap.find(destSocketId);
 		j->second.waitCondition.notify_one();
 		return true;
@@ -227,14 +260,17 @@ private:
 		return InData();
 	}
 
-	bool has_message(size_t socketId) {
+	bool has_message(size_t socketId)
+	{
 		std::lock_guard<std::mutex> locker(dataMapLock);
 		auto i = id2SocketDataMap.find(socketId);
-		if (i == id2SocketDataMap.end()) {
+		if (i == id2SocketDataMap.end())
+		{
 			return false;
 		}
 		std::lock_guard<std::mutex> lock2(i->second.dataMutex);
-		if (i->second.data.size()) {
+		if (i->second.data.size())
+		{
 			return true;
 		}
 		return false;
@@ -269,13 +305,58 @@ private:
 		if (j->second.closing)
 		{
 			//A closing signal
-			j->second.waitCondition.notify_one();
+			//j->second.waitCondition.notify_one();
 			return false;
 		}
 		else
 		{
 			return true;
 		}
+	}
+
+	enum class WaitResult
+	{
+		Terminated,
+		Timeout,
+		Interrupted
+	};
+	bool wait_message(size_t socketId, std::chrono::duration<std::chrono::steady_clock> duration)
+	{
+		//Check if got message already
+		dataMapLock.lock();
+		auto j = id2SignalDataMap.find(socketId);
+		std::unique_lock<std::mutex> lock(j->second.waitMutex);
+		auto i = id2SocketDataMap.find(socketId);
+		if (i == id2SocketDataMap.end())
+		{
+			//socket is no longer valid
+			dataMapLock.unlock();
+			return WaitResult::Terminated;
+		}
+		{
+			std::lock_guard<std::mutex> lock2(i->second.dataMutex);
+			if (i->second.data.size())
+			{
+				dataMapLock.unlock();
+				//Got message already, no need to wait.
+				return WaitResult::Interrupted;
+			}
+		}
+		dataMapLock.unlock();
+		//Start waiting.
+		auto result = j->second.waitCondition.wait_for(lock, duration);
+		//Got signal, check what kind it is
+		if (j->second.closing)
+		{
+			//A closing signal
+			//j->second.waitCondition.notify_one();
+			return WaitResult::Terminated;
+		}
+		else if (result == std::cv_status::timeout)
+		{
+			return WaitResult::Timeout;
+		}
+		return WaitResult::Interrupted;
 	}
 
 private:

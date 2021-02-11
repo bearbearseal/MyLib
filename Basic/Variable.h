@@ -1,7 +1,7 @@
 #ifndef _Variable_H_
 #define _Variable_H_
 #include "Value.h"
-#include "PrioritizedValue.h"
+//#include "PrioritizedValue.h"
 #include <memory>
 #include <vector>
 #include <unordered_set>
@@ -22,18 +22,17 @@ public:
 	Variable();
 	virtual ~Variable();
 	Value read_value() const;
-	bool set_value(const Value& newValue, uint8_t priority);
-	bool write_value(const Value& newValue, uint8_t priority);
-	void set_listener(std::shared_ptr<Listener> _listener);
+	virtual bool write_value(const Value& newValue) = 0;
+	void add_listener(std::weak_ptr<Listener> _listener);
+
 protected:
 	void update_value_to_cache(const Value& newValue);
-	virtual void _write_value(const Value& newValue) = 0;
 
 private:
-	PrioritizedValue writeValue;
 	mutable std::mutex valueMutex;
 	Value value;
 
-	std::weak_ptr<Listener> listener;
+	std::mutex listenersMutex;
+	std::vector<std::weak_ptr<Listener>> listeners;
 };
 #endif

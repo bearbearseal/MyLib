@@ -14,7 +14,6 @@ TcpListener::~TcpListener() {
 
 void TcpListener::start() {
 	//terminate.store(false);
-    printf("Start called.\n");
 	lock_guard<mutex> lock(connectionMutex);
 	if (theProcess == nullptr) {
 		terminate = false;
@@ -31,7 +30,6 @@ void TcpListener::stop() {
 }
 
 void TcpListener::catch_message(std::string& data, size_t handle) {
-	printf("Caught message %s from Socket %lX\n", data.c_str(), handle);
 	string reply = "Got your message: ";
 	reply += data;
 	write_message(handle, reply);
@@ -83,7 +81,6 @@ void TcpListener::thread_process(TcpListener* me) {
 		auto tcpSocket = make_unique<TcpSocket>();
 		printf("Waiting for connection, socket: %p.\n", tcpSocket.get());
 		me->listenSocket.accept(*(tcpSocket.get()));
-        printf("Accepted, gonna lock.\n");
 		{
 			lock_guard<mutex> lock(me->connectionMutex);
 			if (me->terminate) {

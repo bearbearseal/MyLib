@@ -4,28 +4,25 @@ using namespace std;
 
 PrioritizedValue::PrioritizedValue()
 {
-
 }
 
 PrioritizedValue::~PrioritizedValue()
 {
-
 }
 
-bool PrioritizedValue::set_value(uint8_t priority, const Value& newValue)
+bool PrioritizedValue::set_value(uint8_t priority, const Value &newValue)
 {
-    unique_lock<shared_mutex> lock(valueLock);
     auto i = valueMap.find(priority);
-    if(i != valueMap.end())
+    if (i != valueMap.end())
     {
-        if(newValue == i->second)
+        if (newValue == i->second)
         {
             //This set value doesnt change anything
             return false;
         }
     }
     valueMap[priority] = newValue;
-    if(priority == valueMap.rbegin()->first) //reverse begin is the highest priority
+    if (priority == valueMap.rbegin()->first) //reverse begin is the highest priority
     {
         //This set value would change the get value's value.
         return true;
@@ -35,16 +32,15 @@ bool PrioritizedValue::set_value(uint8_t priority, const Value& newValue)
 
 bool PrioritizedValue::unset_value(uint8_t priority)
 {
-    unique_lock<shared_mutex> lock(valueLock);
-    if(!valueMap.size())
+    if (!valueMap.size())
     {
         return false;
     }
-    if(priority == valueMap.rbegin()->first)
+    if (priority == valueMap.rbegin()->first)
     {
         //This unset would affect the read value
         valueMap.erase(priority);
-        if(valueMap.size())
+        if (valueMap.size())
         {
             return true;
         }
@@ -58,27 +54,38 @@ bool PrioritizedValue::unset_value(uint8_t priority)
 Value PrioritizedValue::get_value() const
 {
     Value retValue;
-    shared_lock<shared_mutex> lock(valueLock);
     auto i = valueMap.rbegin();
-    if(i != valueMap.rend())
+    if (i != valueMap.rend())
     {
         retValue = i->second;
     }
     return retValue;
 }
 
-bool PrioritizedValue::clear_lower(uint8_t priority)
+uint8_t PrioritizedValue::get_active_priority()
 {
-    unique_lock<shared_mutex> lock(valueLock);    
-    for(auto i=valueMap.begin(); i != valueMap.end();) {
-        if(i->second <= priority) {
+    uint8_t retVal = 0;
+    if (valueMap.size())
+    {
+        retVal = valueMap.rbegin()->first;
+    }
+    return retVal;
+    ;
+}
+
+void PrioritizedValue::clear_lower(uint8_t priority)
+{
+    for (auto i = valueMap.begin(); i != valueMap.end();)
+    {
+        if (i->second <= priority)
+        {
             auto temp = i;
             ++i;
             valueMap.erase(temp);
         }
-        else {
+        else
+        {
             break;
         }
     }
-    return true;
 }
