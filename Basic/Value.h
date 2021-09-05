@@ -72,6 +72,7 @@ public:
 	void set_string(const std::string&);
 	void set_time(std::chrono::system_clock::time_point);
 	void set_object(const std::unordered_map<HashKey::EitherKey, Value, HashKey::EitherKeyHash>&);
+	void delete_data();
 	void clear_object();
 
 	std::string to_string() const;
@@ -97,7 +98,6 @@ public:
 	const Value& get_value(const HashKey::EitherKey& mapKey) const;
 
 private:
-	void delete_data();
 	union Data {
 		int64_t* intValue;
 		double* floatValue;

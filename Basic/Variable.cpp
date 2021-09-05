@@ -73,16 +73,14 @@ void Variable::update_value_to_cache(const Value& newValue) {
 	//Notify listeners
 	{
 		lock_guard<mutex> lock(listenersMutex);
-		for(auto i= listeners.begin(); i != listeners.end();) {
+		for(auto i = listeners.begin(); i != listeners.end();) {
 			auto shared = i->lock();
 			if (shared != nullptr) {
 				shared->catch_value_change(newValue, chrono::system_clock::now());
 				++i;
 			}
 			else {
-				auto temp = i;
-				++i;
-				listeners.erase(temp);
+				i = listeners.erase(i);
 			}
 		}
 	}

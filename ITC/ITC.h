@@ -26,6 +26,12 @@ public:
 		size_t sourceSocketId;
 		T message;
 	};
+	enum class WaitResult
+	{
+		Terminated,
+		Timeout,
+		Interrupted
+	};
 private:
 	class Proxy
 	{
@@ -36,12 +42,10 @@ private:
 		{
 			return master.send_message_to_socket(destSocketId, message, sourceSocketId);
 		}
-		/*
-		bool send_message_to_socket(size_t destSocketId, T message, size_t sourceSocketId)
+		bool send_message_to_socket(size_t destSocketId, const T& message, size_t sourceSocketId)
 		{
 			return master.send_message_to_socket(destSocketId, message, sourceSocketId);
 		}
-		*/
 		void delete_socket(size_t socketId)
 		{
 			master.delete_socket(socketId);
@@ -53,6 +57,10 @@ private:
 		bool wait_message(size_t socketId)
 		{
 			return master.wait_message(socketId);
+		}
+		std::pair<bool, bool> wait_message(size_t socketId, std::chrono::duration<uint64_t> duration)
+		{
+			return master.wait_message(socketId, duration);
 		}
 		bool has_message(size_t socketId)
 		{
@@ -115,6 +123,15 @@ public:
 				return shared->wait_message(myId);
 			}
 			return false;
+		}
+		std::pair<bool, bool> wait_message(std::chrono::duration<uint64_t> duration)
+		{
+			auto shared = masterProxy.lock();
+			if(shared != nullptr)
+			{
+				return shared->wait_message(myId, duration);
+			}
+			return {false, false};
 		}
 		bool has_message()
 		{
@@ -219,6 +236,21 @@ private:
 		return true;
 	}
 
+	bool send_message_to_socket(size_t destSocketId, const T &message, size_t sourceSocketId)
+	{
+		std::lock_guard<std::mutex> locker(dataMapLock);
+		auto i = id2SocketDataMap.find(destSocketId);
+		if (i == id2SocketDataMap.end())
+		{
+			return false;
+		}
+		std::lock_guard<std::mutex> lock2(i->second.dataMutex);
+		i->second.data.push_back({sourceSocketId, message});
+		auto j = id2SignalDataMap.find(destSocketId);
+		j->second.waitCondition.notify_one();
+		return true;
+	}
+
 	void delete_socket(size_t socketId)
 	{
 		std::lock_guard<std::mutex> locker(dataMapLock);
@@ -314,13 +346,9 @@ private:
 		}
 	}
 
-	enum class WaitResult
-	{
-		Terminated,
-		Timeout,
-		Interrupted
-	};
-	bool wait_message(size_t socketId, std::chrono::duration<std::chrono::steady_clock> duration)
+	//1st true if ITC still valid, false if ITC is dectructed.
+	//2nd true if got message come in, false if time out.
+	std::pair<bool, bool> wait_message(size_t socketId, std::chrono::duration<uint64_t> duration)
 	{
 		//Check if got message already
 		dataMapLock.lock();
@@ -331,7 +359,7 @@ private:
 		{
 			//socket is no longer valid
 			dataMapLock.unlock();
-			return WaitResult::Terminated;
+			return {false, false};
 		}
 		{
 			std::lock_guard<std::mutex> lock2(i->second.dataMutex);
@@ -339,24 +367,25 @@ private:
 			{
 				dataMapLock.unlock();
 				//Got message already, no need to wait.
-				return WaitResult::Interrupted;
+				return {true, true};
 			}
 		}
 		dataMapLock.unlock();
 		//Start waiting.
 		auto result = j->second.waitCondition.wait_for(lock, duration);
+		//auto result = j->second.waitCondition.wait_for(lock, std::chrono::seconds(10));
 		//Got signal, check what kind it is
 		if (j->second.closing)
 		{
 			//A closing signal
 			//j->second.waitCondition.notify_one();
-			return WaitResult::Terminated;
+			return {false, false};
 		}
 		else if (result == std::cv_status::timeout)
 		{
-			return WaitResult::Timeout;
+			return {true, false};
 		}
-		return WaitResult::Interrupted;
+		return {true, true};
 	}
 
 private:

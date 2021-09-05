@@ -15,6 +15,11 @@
 
 class TcpSocket {
 public:
+	enum class Status{
+		SOCKET_CLOSED = -1,
+		NO_ERROR = 0,
+		
+	};
 	TcpSocket(bool blocking = true);
 	virtual ~TcpSocket();
 

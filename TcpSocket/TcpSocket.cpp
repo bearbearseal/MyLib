@@ -210,7 +210,8 @@ bool TcpSocket::accept(TcpSocket &newSocket)
 
 bool TcpSocket::write(const std::string &data)
 {
-	if (send(socketFd, data.c_str(), data.size(), 0) < 0)
+	ssize_t reply = send(socketFd, data.c_str(), data.size(), MSG_NOSIGNAL);
+	if (reply < ssize_t(data.size()))
 	{
 		printf("Send failed");
 		return false;
@@ -253,8 +254,8 @@ pair<bool, string> TcpSocket::read(bool dontWait)
 		}
 		else //peer closed socket
 		{
-			printf("Peer closed socket.\n");
 			retVal.first= false;
+			printf("Peer closed socket.\n");
 			return retVal;
 		}
 	} while (length == sizeof(receiver));
