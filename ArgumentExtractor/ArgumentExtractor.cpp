@@ -5,7 +5,7 @@ using namespace std;
 
 ArgumentExtractor::ArgumentExtractor(int argc, char** argv)
 {
-    auto group = &arguments[""];
+    std::unordered_set<std::string>* group = nullptr;
     for(size_t i=1; i<size_t(argc); ++i)
     {
         if(argv[i][0] == GROUPER && strlen(argv[i])>1)
@@ -14,6 +14,10 @@ ArgumentExtractor::ArgumentExtractor(int argc, char** argv)
         }
         else
         {
+            if(group == nullptr)
+            {
+                group = &arguments[""];
+            }
             group->insert(argv[i]);
         }
     }
@@ -60,25 +64,3 @@ bool ArgumentExtractor::group_has_argument(const std::string& groupName, const s
     }
     return false;
 }
-
-/*
-size_t ArgumentExtractor::size()
-{
-    return arguments.size();
-}
-
-const std::string& ArgumentExtractor::at(size_t index)
-{
-    static string empty;
-    if(index<arguments.size())
-    {
-        return arguments[index];
-    }
-    return empty;
-}
-
-const std::vector<std::string>& ArgumentExtractor::get_argument()
-{
-    return arguments;
-}
-*/

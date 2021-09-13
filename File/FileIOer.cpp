@@ -135,14 +135,18 @@ bool FileIOer::read_data(uint32_t position, void* const dest, uint32_t length)
 	{
 		return false;
 	}
+	bool retVal = true;
 	fseek(file, position, SEEK_SET);
 #ifdef _WIN32
 	fread_s(dest, length, 1, length, file);
 #else
-	fread(dest, 1, length, file);
+	if(fread(dest, 1, length, file))
+	{
+		retVal = true;
+	}
 #endif
 	fclose(file);
-	return true;
+	return retVal;
 }
 
 std::string FileIOer::read_data(uint32_t startIndex) {
