@@ -82,6 +82,23 @@ bool Sqlite3::execute_update(const std::string& update, ...) {
     return true;
 }
 
+uint64_t Sqlite3::execute_insert(const std::string& update, ...) {
+    char tempBuffer[4096];
+    va_list parameters;
+    va_start(parameters, update);
+    vsprintf(tempBuffer, update.c_str(), parameters);
+    va_end(parameters);
+    char* zErrMessage = nullptr;
+    int result = sqlite3_exec(db, tempBuffer, nullptr, nullptr, &zErrMessage);
+    if(result != SQLITE_OK) {
+        printf("Error code: %d\nMessage: %s\n", result, zErrMessage);
+        //throw SqliteError;
+        throw Exception(Sqlite3::ErrorCode::SqliteError, zErrMessage, result);
+    }
+    return sqlite3_last_insert_rowid(db);
+}
+
+
 Sqlite3::ResultSet::ResultSet(std::vector<std::vector<std::pair<bool, std::string>>>& _data, std::unordered_map<std::string, size_t>& _names, std::vector<std::string>& _columnNames) {
     data = move(_data);
     names = move(_names);
@@ -166,12 +183,4 @@ pair<bool, double> Sqlite3::ResultSet::get_float(size_t row, const std::string& 
         throw InvalidColumn;
     }
     return {data[row][i->second].first, stod(data[row][i->second].second)};
-}
-
-size_t Sqlite3::ResultSet::get_row_count() const {
-    return data.size();
-}
-
-size_t Sqlite3::ResultSet::get_column_count() const {
-    return names.size();
 }

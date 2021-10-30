@@ -1,6 +1,7 @@
 #include "FileIOer.h"
 #include "FileBrowser.h"
 #include "UdpFileBrowser.h"
+#include "FileThreadWrite.h"
 #include <iostream>
 #include <thread>
 
@@ -46,6 +47,20 @@ namespace Test {
         udpFileBrowser.start();
         while(1) {
             this_thread::sleep_for(1s);
+        }
+    }
+
+    void run_thread_writer() {
+        FileThreadWrite file("log.txt");
+        while(1)
+        {
+            string input;
+            cin>>input;
+            if(input == "exit")
+            {
+                return;
+            }
+            file.append_data(input);
         }
     }
 }

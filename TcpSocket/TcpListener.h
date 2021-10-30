@@ -39,6 +39,7 @@ protected:
 	virtual void catch_message(std::string& data, size_t handle);
 	virtual void catch_connect_event(size_t handle);
 	virtual void catch_disconnect_event(size_t handle);
+	void broadcast(const std::string& data);
 	bool write_message(size_t handle, const std::string& message);
     void close_socket(size_t handle);
 

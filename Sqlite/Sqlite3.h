@@ -36,8 +36,8 @@ public:
         std::pair<bool, int64_t> get_integer(size_t row, const std::string& column) const;
         std::pair<bool, double> get_float(size_t row, size_t column) const;
         std::pair<bool, double> get_float(size_t row, const std::string& column) const;
-        size_t get_row_count() const;
-        size_t get_column_count() const;
+        inline size_t get_row_count() const { return data.size(); }
+        inline size_t get_column_count() const { return names.size(); }
         const std::string& get_column_name(size_t index) const;
     private:
         std::vector<std::vector<std::pair<bool, std::string>>> data;
@@ -49,6 +49,7 @@ public:
     ~Sqlite3();
     std::unique_ptr<ResultSet> execute_query(const std::string& query, ...);
     bool execute_update(const std::string& update, ...);
+    uint64_t execute_insert(const std::string& update, ...);
 
 private:
     sqlite3* db;

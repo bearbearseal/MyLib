@@ -47,9 +47,17 @@ bool TcpListener::write_message(size_t handle, const std::string& message) {
 	lock_guard<mutex> lock(connectionMutex);
 	auto i = socketAddress2Connection.find(handle);
 	if (i != socketAddress2Connection.end()) {
-		return ((TcpSocket*)i->first)->write(message);
+		return (i->second)->write(message);
 	}
 	return false;
+}
+
+void TcpListener::broadcast(const std::string& data) 
+{
+	lock_guard<mutex> lock(connectionMutex);
+	for(auto i=socketAddress2Connection.begin(); i!=socketAddress2Connection.end(); ++i) {
+		i->second->write(data);
+	}
 }
 
 void TcpListener::close_socket(size_t handle) {
@@ -68,10 +76,8 @@ void TcpListener::close_socket(size_t handle) {
 
 //Only mark to delete, do it at main thread
 void TcpListener::free_connection(size_t handle) {
-    //printf("Freeing.\n");
     lock_guard<mutex> lock(markedMutex);
     markedRemove.emplace(handle);
-    //printf("End of free.\n");
 }
 
 void TcpListener::thread_process(TcpListener* me) {

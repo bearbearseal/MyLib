@@ -1,13 +1,13 @@
 /************************************************************************************************************
-* ITC stands for Inter-Threads Communicator, it helps threads to exchange information.						* 
-* ITC<T>::Socket and ITC<T>::FixedSocket can only talk to other Socket(s) created by the same ITC<T>		*
-* The IDs of the Sockets created by the same ITC<T> cannot repeat. 											*
-* ITC<T>::FixedSocket allows sending message without specifying destination (it is defined in constructor)	*
-* ITC<T>::Socket needs destination specified each time it sends message (that's the only difference)		*
-************************************************************************************************************/
+ * ITC stands for Inter-Threads Communicator, it helps threads to exchange information.						*
+ * ITC<T>::Socket and ITC<T>::FixedSocket can only talk to other Socket(s) created by the same ITC<T>		*
+ * The IDs of the Sockets created by the same ITC<T> cannot repeat. 											*
+ * ITC<T>::FixedSocket allows sending message without specifying destination (it is defined in constructor)	*
+ * ITC<T>::Socket needs destination specified each time it sends message (that's the only difference)		*
+ ************************************************************************************************************/
 #pragma once
-#ifndef _ITC_H_
-#define _ITC_H_
+#ifndef _ITC2_H_
+#define _ITC2_H_
 #include <unordered_map>
 #include <tuple>
 #include <string>
@@ -20,6 +20,7 @@ template <typename T>
 class ITC
 {
 	friend class Proxy;
+
 public:
 	struct InData
 	{
@@ -32,6 +33,7 @@ public:
 		Timeout,
 		Interrupted
 	};
+
 private:
 	class Proxy
 	{
@@ -42,7 +44,7 @@ private:
 		{
 			return master.send_message_to_socket(destSocketId, message, sourceSocketId);
 		}
-		bool send_message_to_socket(size_t destSocketId, const T& message, size_t sourceSocketId)
+		bool send_message_to_socket(size_t destSocketId, const T &message, size_t sourceSocketId)
 		{
 			return master.send_message_to_socket(destSocketId, message, sourceSocketId);
 		}
@@ -70,10 +72,12 @@ private:
 	private:
 		ITC &master;
 	};
+
 public:
 	class Socket
 	{
 		friend class ITC;
+
 	public:
 		Socket(size_t socketId, std::shared_ptr<Proxy> _masterProxy)
 		{
@@ -113,7 +117,7 @@ public:
 			{
 				return shared->get_message(myId);
 			}
-			return InData();
+			throw "Master gone";
 		}
 		bool wait_message()
 		{
@@ -124,10 +128,12 @@ public:
 			}
 			return false;
 		}
+		// 1st true if ITC still valid, false if ITC is dectructed.
+		// 2nd true if got message come in, false if time out.
 		std::pair<bool, bool> wait_message(std::chrono::duration<uint64_t> duration)
 		{
 			auto shared = masterProxy.lock();
-			if(shared != nullptr)
+			if (shared != nullptr)
 			{
 				return shared->wait_message(myId, duration);
 			}
@@ -174,7 +180,7 @@ public:
 	{
 		std::weak_ptr<Proxy> proxyShadow = myProxy;
 		myProxy.reset();
-		//Notify all
+		// Notify all
 		{
 			std::lock_guard<std::mutex> locker(dataMapLock);
 			for (auto i = id2SignalDataMap.begin(); i != id2SignalDataMap.end(); ++i)
@@ -184,7 +190,7 @@ public:
 				i->second.waitCondition.notify_one();
 			}
 		}
-		//Make sure no one is accessing this proxy before ending
+		// Make sure no one is accessing this proxy before ending
 		while (proxyShadow.lock() != nullptr)
 		{
 			std::this_thread::yield();
@@ -220,7 +226,7 @@ public:
 	}
 
 private:
-	//messages would be moved
+	// messages would be moved
 	bool send_message_to_socket(size_t destSocketId, T &message, size_t sourceSocketId)
 	{
 		std::lock_guard<std::mutex> locker(dataMapLock);
@@ -257,14 +263,14 @@ private:
 		auto i = id2SignalDataMap.find(socketId);
 		if (i->second.waitMutex.try_lock())
 		{
-			//wait for message thread isnt running, can delete
+			// wait for message thread isnt running, can delete
 			id2SocketDataMap.erase(socketId);
 			i->second.waitMutex.unlock();
 			id2SignalDataMap.erase(socketId);
 		}
 		else
 		{
-			//waiting for message, give a failed message, then wait for exit waiting signal.
+			// waiting for message, give a failed message, then wait for exit waiting signal.
 			i->second.closing = true;
 			i->second.waitCondition.notify_one();
 			std::unique_lock<std::mutex> lock2(i->second.waitMutex);
@@ -280,7 +286,7 @@ private:
 		auto i = id2SocketDataMap.find(socketId);
 		if (i == id2SocketDataMap.end())
 		{
-			return InData();
+			throw "Invalid socket ID";
 		}
 		std::lock_guard<std::mutex> lock2(i->second.dataMutex);
 		if (i->second.data.size())
@@ -289,7 +295,7 @@ private:
 			i->second.data.pop_front();
 			return retVal;
 		}
-		return InData();
+		throw "Socket has no message";
 	}
 
 	bool has_message(size_t socketId)
@@ -310,14 +316,14 @@ private:
 
 	bool wait_message(size_t socketId)
 	{
-		//Check if got message already
+		// Check if got message already
 		dataMapLock.lock();
 		auto j = id2SignalDataMap.find(socketId);
 		std::unique_lock<std::mutex> lock(j->second.waitMutex);
 		auto i = id2SocketDataMap.find(socketId);
 		if (i == id2SocketDataMap.end())
 		{
-			//socket is no longer valid
+			// socket is no longer valid
 			dataMapLock.unlock();
 			return false;
 		}
@@ -326,18 +332,18 @@ private:
 			if (i->second.data.size())
 			{
 				dataMapLock.unlock();
-				//Got message already, no need to wait.
+				// Got message already, no need to wait.
 				return true;
 			}
 		}
 		dataMapLock.unlock();
-		//Start waiting.
+		// Start waiting.
 		j->second.waitCondition.wait(lock);
-		//Got signal, check what kind it is
+		// Got signal, check what kind it is
 		if (j->second.closing)
 		{
-			//A closing signal
-			//j->second.waitCondition.notify_one();
+			// A closing signal
+			// j->second.waitCondition.notify_one();
 			return false;
 		}
 		else
@@ -346,18 +352,18 @@ private:
 		}
 	}
 
-	//1st true if ITC still valid, false if ITC is dectructed.
-	//2nd true if got message come in, false if time out.
+	// 1st true if ITC still valid, false if ITC is dectructed.
+	// 2nd true if got message come in, false if time out.
 	std::pair<bool, bool> wait_message(size_t socketId, std::chrono::duration<uint64_t> duration)
 	{
-		//Check if got message already
+		// Check if got message already
 		dataMapLock.lock();
 		auto j = id2SignalDataMap.find(socketId);
 		std::unique_lock<std::mutex> lock(j->second.waitMutex);
 		auto i = id2SocketDataMap.find(socketId);
 		if (i == id2SocketDataMap.end())
 		{
-			//socket is no longer valid
+			// socket is no longer valid
 			dataMapLock.unlock();
 			return {false, false};
 		}
@@ -366,19 +372,19 @@ private:
 			if (i->second.data.size())
 			{
 				dataMapLock.unlock();
-				//Got message already, no need to wait.
+				// Got message already, no need to wait.
 				return {true, true};
 			}
 		}
 		dataMapLock.unlock();
-		//Start waiting.
+		// Start waiting.
 		auto result = j->second.waitCondition.wait_for(lock, duration);
-		//auto result = j->second.waitCondition.wait_for(lock, std::chrono::seconds(10));
-		//Got signal, check what kind it is
+		// auto result = j->second.waitCondition.wait_for(lock, std::chrono::seconds(10));
+		// Got signal, check what kind it is
 		if (j->second.closing)
 		{
-			//A closing signal
-			//j->second.waitCondition.notify_one();
+			// A closing signal
+			// j->second.waitCondition.notify_one();
 			return {false, false};
 		}
 		else if (result == std::cv_status::timeout)

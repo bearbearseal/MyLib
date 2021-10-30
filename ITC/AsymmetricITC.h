@@ -19,13 +19,11 @@ public:
 	struct InData1
 	{
 		uint16_t sourceSocketId;
-		//std::string message;
 		T1 message;
 	};
 	struct InData2
 	{
 		uint16_t sourceSocketId;
-		//std::string message;
 		T2 message;
 	};
 	class Socket1
