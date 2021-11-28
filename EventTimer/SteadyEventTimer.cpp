@@ -74,7 +74,8 @@ void SteadyEventTimer::thread_process(SteadyEventTimer *me)
                     for(size_t i=0; i<listenerList.size(); ++i)
                     {
                         auto shared = listenerList[i].listener.lock();
-                        if(shared != nullptr) {
+                        if(shared != nullptr)
+                        {
                             shared->catch_timed_event(listenerList[i].token);
                         }
                     }

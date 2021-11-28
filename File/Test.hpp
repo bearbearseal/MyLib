@@ -1,7 +1,7 @@
 #include "FileIOer.h"
 #include "FileBrowser.h"
 #include "UdpFileBrowser.h"
-#include "FileThreadWrite.h"
+#include "LogThreadWriter.h"
 #include <iostream>
 #include <thread>
 
@@ -51,7 +51,7 @@ namespace Test {
     }
 
     void run_thread_writer() {
-        FileThreadWrite file("log.txt");
+        LogThreadWriter file("log.txt");
         while(1)
         {
             string input;
@@ -60,7 +60,7 @@ namespace Test {
             {
                 return;
             }
-            file.append_data(input);
+            file.add_log(input);
         }
     }
 }

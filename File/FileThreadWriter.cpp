@@ -1,21 +1,21 @@
-#include "FileThreadWrite.h"
+#include "FileThreadWriter.h"
 
 using namespace std;
 
-FileThreadWrite::FileThreadWrite(const string &_filename) : filename(_filename)
+FileThreadWriter::FileThreadWriter(const string &_filename) : filename(_filename)
 {
     mainSocket = theItc.create_fixed_socket(1, 2);
     threadSocket = theItc.create_fixed_socket(2, 1);
     theProcess = make_unique<thread>(the_process, this);
 }
 
-FileThreadWrite::~FileThreadWrite()
+FileThreadWriter::~FileThreadWriter()
 {
     mainSocket->send_message({Command::Stop, ""});
     theProcess->join();
 }
 
-bool FileThreadWrite::clear()
+bool FileThreadWriter::clear()
 {
     FILE *file;
 #ifdef _WIN32
@@ -31,17 +31,17 @@ bool FileThreadWrite::clear()
     return true;
 }
 
-void FileThreadWrite::append_data(const string &data)
+void FileThreadWriter::append_data(const string &data)
 {
     mainSocket->send_message({Command::Append, data});
 }
 
-ssize_t FileThreadWrite::get_last_error()
+ssize_t FileThreadWriter::get_last_error()
 {
     return lastError.load();
 }
 
-void FileThreadWrite::the_process(FileThreadWrite *me)
+void FileThreadWriter::the_process(FileThreadWriter *me)
 {
     while (1)
     {

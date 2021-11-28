@@ -5,11 +5,11 @@
 #include <thread>
 #include "../ITC/ITC.h"
 
-class FileThreadWrite
+class FileThreadWriter
 {
 public:
-    FileThreadWrite(const std::string &_filename);
-    ~FileThreadWrite();
+    FileThreadWriter(const std::string &_filename);
+    virtual ~FileThreadWriter();
     bool clear();
     void append_data(const std::string &data);
     ssize_t get_last_error();
@@ -37,7 +37,7 @@ private:
     std::atomic<ssize_t> lastError = 0;
     std::unique_ptr<std::thread> theProcess = nullptr;
 
-    static void the_process(FileThreadWrite *me);
+    static void the_process(FileThreadWriter *me);
 };
 
 #endif

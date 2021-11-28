@@ -49,7 +49,7 @@ int select_call_back(void* parameter, int argc, char** argv, char** azColName) {
     return 0;
 }
 
-std::unique_ptr<Sqlite3::ResultSet> Sqlite3::execute_query(const std::string& query, ...) {
+std::unique_ptr<Sqlite3::ResultSet> Sqlite3::execute_query(const std::string& query, ...) const {
     char tempBuffer[4096];
     va_list parameters;
     va_start(parameters, query);
@@ -171,6 +171,9 @@ pair<bool, double> Sqlite3::ResultSet::get_float(size_t row, size_t column) cons
     if(column > names.size()) {
         throw InvalidColumn;
     }
+    if(!data[row][column].second.size()) {
+        return {false, std::numeric_limits<double>::quiet_NaN()};
+    }
     return {data[row][column].first, stod(data[row][column].second)};
 }
 
@@ -181,6 +184,9 @@ pair<bool, double> Sqlite3::ResultSet::get_float(size_t row, const std::string& 
     auto i = names.find(column);
     if(i == names.end()) {
         throw InvalidColumn;
+    }
+    if(!data[row][i->second].second.size()) {
+        return {false, std::numeric_limits<double>::quiet_NaN()};
     }
     return {data[row][i->second].first, stod(data[row][i->second].second)};
 }

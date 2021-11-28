@@ -47,7 +47,7 @@ public:
 
     Sqlite3(const std::string& name);
     ~Sqlite3();
-    std::unique_ptr<ResultSet> execute_query(const std::string& query, ...);
+    std::unique_ptr<ResultSet> execute_query(const std::string& query, ...) const;
     bool execute_update(const std::string& update, ...);
     uint64_t execute_insert(const std::string& update, ...);
 

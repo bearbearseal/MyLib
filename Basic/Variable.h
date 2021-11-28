@@ -26,7 +26,7 @@ public:
 	void add_listener(std::weak_ptr<Listener> _listener);
 
 protected:
-	void update_value_to_cache(const Value& newValue);
+	virtual void update_value_to_cache(const Value& newValue);
 
 private:
 	mutable std::mutex valueMutex;

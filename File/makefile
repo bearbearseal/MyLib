@@ -3,7 +3,7 @@ OBJS += TcpListener.o TcpSocket.o
 OBJS += UdpListener.o UdpSocket.o
 OBJS += FileIOer.o FileBrowser.o
 OBJS += StringManipulator.o UdpFileBrowser.o
-OBJS += FileThreadWrite.o
+OBJS += FileThreadWriter.o LogThreadWriter.o
 CC = g++ -std=c++17
 CFLAGS = -Wall -c
 LFLAGS = -Wall
@@ -43,8 +43,11 @@ StringManipulator.o: ../StringManipulator/StringManipulator.h ../StringManipulat
 UdpFileBrowser.o: UdpFileBrowser.h UdpFileBrowser.cpp
 	$(CC) $(CFLAGS) UdpFileBrowser.cpp
 
-FileThreadWrite.o: FileThreadWrite.h FileThreadWrite.cpp
-	$(CC) $(CFLAGS) FileThreadWrite.cpp
+FileThreadWriter.o: FileThreadWriter.h FileThreadWriter.cpp
+	$(CC) $(CFLAGS) FileThreadWriter.cpp
+
+LogThreadWriter.o: LogThreadWriter.h LogThreadWriter.cpp
+	$(CC) $(CFLAGS) LogThreadWriter.cpp
 
 clean:
 	rm -f $(binaries) *.o
