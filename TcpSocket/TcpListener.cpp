@@ -36,11 +36,11 @@ void TcpListener::catch_message(std::string& data, size_t handle) {
 }
 
 void TcpListener::catch_connect_event(size_t handle) {
-	printf("Caught connect event from Socket %lX\n", handle);
+	printf("Caught connect event from Socket %zu\n", handle);
 }
 
 void TcpListener::catch_disconnect_event(size_t handle) {
-	printf("Caught disconnect event from socket %lX\n", handle);
+	printf("Caught disconnect event from socket %zu\n", handle);
 }
 
 bool TcpListener::write_message(size_t handle, const std::string& message) {
