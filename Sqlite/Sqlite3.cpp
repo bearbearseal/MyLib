@@ -146,44 +146,6 @@ bool do_sql_bind(sqlite3_stmt *stmt, variant<int64_t, double, string> parameter,
     return false;
 }
 
-optional<uint64_t> Sqlite3::execute_bulk_insert(const string &statement, const vector<vector<variant<int64_t, double, string>>> &parameters)
-{
-    sqlite3_exec(db, "BEGIN TRANSACTION", NULL, NULL, NULL);
-    sqlite3_stmt *stmt;
-    int rc = sqlite3_prepare_v2(db, statement.c_str(), statement.size(), &stmt, NULL);
-    if (rc != SQLITE_OK)
-    {
-        return {};
-    }
-    for (size_t i = 0; i < parameters.size(); ++i)
-    {
-        for (size_t j = 0; j < parameters[i].size(); ++j)
-        {
-            if (!do_sql_bind(stmt, parameters[i][j], j+1))
-            {
-                goto failed_end;
-            }
-        }
-        rc = sqlite3_step(stmt);
-        if (rc != SQLITE_DONE)
-        {
-            goto failed_end;
-        }
-        rc = sqlite3_reset(stmt);
-        if (rc != SQLITE_OK)
-        {
-            goto failed_end;
-        }
-    }
-    sqlite3_exec(db, "COMMIT TRANSACTION", NULL, NULL, NULL);
-    sqlite3_finalize(stmt);
-    return sqlite3_last_insert_rowid(db);
-failed_end:
-    printf("Failed with %d\n", rc);
-    sqlite3_finalize(stmt);
-    return {};
-}
-
 Sqlite3::ResultSet::ResultSet(vector<vector<pair<bool, std::string>>> &_data, unordered_map<string, size_t> &_names, vector<string> &_columnNames)
 {
     data = move(_data);
