@@ -100,6 +100,31 @@ bool Sqlite3::execute_update(const string &update, ...)
     return true;
 }
 
+bool Sqlite3::execute_atomic_update(const std::string &update, ...)
+{
+}
+
+bool Sqlite3::execute_atomic_update(const std::vector<std::string> &update)
+{
+    int rc = sqlite3_exec(db, "BEGIN TRANSACTION", NULL, NULL, NULL);
+    char *zErrMessage = nullptr;
+    for (size_t i = 0; i < update.size(); ++i)
+    {
+        rc = sqlite3_exec(db, update[i].c_str(), NULL, NULL, &zErrMessage);
+        if (rc != SQLITE_OK)
+        {
+            printf("Error code: %d\nMessage: %s\n", rc, zErrMessage);
+            sqlite3_free(zErrMessage);
+            return false;
+        }
+    }
+    if(sqlite3_exec(db, "COMMIT TRANSACTION", NULL, NULL, NULL) == SQLITE_OK)
+    {
+        return true;
+    }
+    return false;
+}
+
 optional<uint64_t> Sqlite3::execute_insert(const string &update, ...)
 {
     char tempBuffer[4096];

@@ -133,6 +133,7 @@ public:
     ~Sqlite3();
     std::unique_ptr<ResultSet> execute_query(const std::string &query, ...) const;
     bool execute_update(const std::string &update, ...);
+    bool execute_atomic_update(const std::vector<std::string>& update);
     // returns last insert id.
     std::optional<uint64_t> execute_insert(const std::string &update, ...);
     template <typename T, typename... Args>
