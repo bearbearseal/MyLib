@@ -196,11 +196,27 @@ namespace Test
         Sqlite3 sqlite("/var/sqlite/PointLog.db");
         // unique_ptr<Sqlite3::BulkInsert<string, int64_t>> bulkInsert =
         {
-            auto bulkInsert = move(sqlite.create_bulk_insert<string, int64_t>("INSERT Into TableInfo (Name, BeginSec) VALUES (?, ?)"));
+            auto bulkInsert = move(sqlite.create_bulk_insert<int64_t, int64_t, int64_t, int64_t, double>("Insert Into table1 (Id, Device, Point, SecTime, Value) VALUES (?, ?, ?, ?, ?)"));
             printf("After create bulk.\n");
             if (bulkInsert != nullptr)
             {
-                printf("Has value.\n");
+                //printf("Has value.\n");
+                bulkInsert->add_line(1, 1, 1, 100, 80.5);
+                bulkInsert->add_line(2, 1, 2, 1200, 180.5);
+                bulkInsert->add_line(3, 2, 1, 1030, 8.5);
+                bulkInsert->add_line(4, 2, 3, 1004, 80.4);
+                bulkInsert->commit_insert();
+            }
+            else
+            {
+                printf("Empty value.\n");
+            }
+            /*
+            auto bulkInsert = sqlite.create_bulk_insert<string, int64_t>("INSERT Into TableInfo (Name, BeginSec) VALUES (?, ?)");
+            printf("After create bulk.\n");
+            if (bulkInsert != nullptr)
+            {
+                //printf("Has value.\n");
                 bulkInsert->add_line("table10", int64_t(5000));
                 bulkInsert->add_line("table11", int64_t(6000));
                 bulkInsert->add_line("table12", int64_t(7000));
@@ -210,6 +226,7 @@ namespace Test
             {
                 printf("Empty value.\n");
             }
+            */
         }
         printf("Going to end.\n");
     }

@@ -12,40 +12,46 @@ The event would be invoked when time is >= the intended time and be removed.
 #include <thread>
 #include "../../MyLib/ITC/ITC.h"
 
-class Timer {
+class Timer
+{
 public:
-    class Listener {
+    class Listener
+    {
     public:
         Listener() {}
         virtual ~Listener() {}
 
-        virtual void catch_time_event(time_t eventTime, uint32_t token) {}
-
+        virtual void catch_time_event(time_t eventTime, uint32_t token) = 0;
     };
     Timer();
     virtual ~Timer();
 
     void terminate();
     void time_changed();
-    void add_time_event(time_t eventTime, std::weak_ptr<Listener> listener, uint32_t token);
+    void add_time_event(time_t eventTime, std::weak_ptr<Listener> listener, uint32_t token = 0, time_t interval = 0);
 
 private:
-    enum class Command {
+    enum class Command
+    {
         AddEvent,
         TimeChanged,
         Terminate
     };
-    struct ListenerData {
+    struct ListenerData
+    {
         std::weak_ptr<Listener> listener;
+        time_t interval;
         uint32_t token;
     };
     std::map<time_t, std::vector<ListenerData>> second2ListenerListMap;
 
-    struct Message {
+    struct Message
+    {
         Command command;
-        time_t eventTime = 0;
+        time_t eventTime;
         std::weak_ptr<Listener> listener;
-        uint32_t token = 0;
+        time_t interval;
+        uint32_t token;
     };
 
     std::unique_ptr<std::thread> theProcess;
@@ -54,8 +60,7 @@ private:
     std::unique_ptr<ITC<Message>::FixedSocket> threadSocket;
     size_t processState = 0;
 
-    static void thread_process(Timer* me);
-    void handle_add_event(const Message& message);
+    static void thread_process(Timer *me);
 };
 
 #endif

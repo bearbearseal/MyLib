@@ -29,20 +29,15 @@ void Timer::time_changed()
     eventSocket->send_message(message);
 }
 
-void Timer::add_time_event(time_t eventTime, std::weak_ptr<Listener> listener, uint32_t token)
+void Timer::add_time_event(time_t eventTime, std::weak_ptr<Listener> listener, uint32_t token, time_t interval)
 {
     Message message;
     message.command = Command::AddEvent;
     message.eventTime = eventTime;
     message.listener = listener;
     message.token = token;
+    message.interval = interval;
     eventSocket->send_message(message);
-}
-
-void Timer::handle_add_event(const Message &message)
-{
-    auto &entry = second2ListenerListMap[message.eventTime];
-    entry.push_back({message.listener, message.token});
 }
 
 void Timer::thread_process(Timer *me)
@@ -66,7 +61,7 @@ void Timer::thread_process(Timer *me)
                 {
                 case Command::AddEvent:
                     printf("Adding event at %ld\n", message.message.eventTime);
-                    me->second2ListenerListMap[message.message.eventTime].push_back({message.message.listener, message.message.token});
+                    me->second2ListenerListMap[message.message.eventTime].push_back({message.message.listener, message.message.interval, message.message.token});
                     break;
                 case Command::TimeChanged:
                     break;
@@ -93,19 +88,26 @@ void Timer::thread_process(Timer *me)
                 time_t eventSecond = firstEntry->first;
                 if(eventSecond <= secondNow)
                 {
-                    for (auto i = firstEntry->second.begin(); i != firstEntry->second.end(); ++i)
+                    for (size_t i = 0; i < firstEntry->second.size(); ++i)
                     {
-                        auto shared = i->listener.lock();
+                        ListenerData& currentListener = firstEntry->second[i];
+                        auto shared = currentListener.listener.lock();
                         if (shared != nullptr)
                         {
-                            shared->catch_time_event(eventSecond, i->token);
+                            shared->catch_time_event(eventSecond, currentListener.token);
+                            if(currentListener.interval)
+                            {
+                                //add to list again
+                                me->second2ListenerListMap[eventSecond+currentListener.interval].push_back({currentListener.listener, currentListener.interval, currentListener.token});
+                            }
                         }
                     }
                     me->second2ListenerListMap.erase(firstEntry);
                 }
                 else
                 {
-                    printf("Going to wait %lu seconds for event.\n", eventSecond - secondNow);
+                    //printf("Going to wait %lu seconds for event.\n", eventSecond - secondNow);
+                    //printf("Event time %lu now %lu\n", eventSecond, secondNow);
                     me->threadSocket->wait_message(chrono::seconds(eventSecond - secondNow));
                     if(me->threadSocket->has_message())
                     {

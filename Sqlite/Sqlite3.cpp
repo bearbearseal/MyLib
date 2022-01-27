@@ -100,10 +100,6 @@ bool Sqlite3::execute_update(const string &update, ...)
     return true;
 }
 
-bool Sqlite3::execute_atomic_update(const std::string &update, ...)
-{
-}
-
 bool Sqlite3::execute_atomic_update(const std::vector<std::string> &update)
 {
     int rc = sqlite3_exec(db, "BEGIN TRANSACTION", NULL, NULL, NULL);

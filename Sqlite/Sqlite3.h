@@ -79,17 +79,20 @@ public:
                 rc = sqlite3_step(stmt);
                 if (rc != SQLITE_DONE)
                 {
+                    printf("Failed 1\n");
                     goto failed_end;
                 }
                 rc = sqlite3_reset(stmt);
                 if (rc != SQLITE_OK)
                 {
+                    printf("Failed 2\n");
                     goto failed_end;
                 }
             }
             rc = sqlite3_exec(db, "COMMIT TRANSACTION", NULL, NULL, NULL);
             if (rc != SQLITE_OK)
             {
+                printf("Failed 3\n");
                 goto failed_end;
             }
             lines.clear();
@@ -118,6 +121,9 @@ public:
         bool create_bulk_insert(sqlite3 *_db, const std::string &statement)
         {
             db = _db;
+            // int retVal = sqlite3_prepare_v2(db, statement.c_str(), statement.size(), &stmt, NULL);
+            // printf("RetVal %d\n", retVal);
+            // return retVal == SQLITE_OK;
             return sqlite3_prepare_v2(db, statement.c_str(), statement.size(), &stmt, NULL) == SQLITE_OK;
         }
         inline std::tuple<T, Args...> create_my_tuple(T first, Args... rest)
@@ -133,7 +139,7 @@ public:
     ~Sqlite3();
     std::unique_ptr<ResultSet> execute_query(const std::string &query, ...) const;
     bool execute_update(const std::string &update, ...);
-    bool execute_atomic_update(const std::vector<std::string>& update);
+    bool execute_atomic_update(const std::vector<std::string> &update);
     // returns last insert id.
     std::optional<uint64_t> execute_insert(const std::string &update, ...);
     template <typename T, typename... Args>
