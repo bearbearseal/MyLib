@@ -2,6 +2,7 @@
 #include "../../MyLib/ITC/ITC.h"
 #include <map>
 #include <vector>
+#include <optional>
 #include <stdio.h>
 
 using namespace std;
@@ -20,13 +21,18 @@ struct ListenerData
 };
 std::map<time_t, std::vector<ListenerData>> second2ListenerListMap;
 
-struct Message
+struct EventData
 {
-    Command command;
     time_t eventTime;
     std::weak_ptr<EventTimer::Listener> listener;
     time_t interval;
     uint32_t token;
+};
+
+struct Message
+{
+    Command command = Command::AddEvent;
+    optional<EventData> data;
 };
 
 std::unique_ptr<std::thread> theProcess;
@@ -53,19 +59,18 @@ void EventTimer::start()
 
 void EventTimer::time_changed()
 {
-    Message message;
-    message.command = Command::TimeChanged;
-    eventSocket->send_message(message);
+    // Message message{Command::TimeChanged, {}};
+    eventSocket->send_message(Message{Command::TimeChanged, {}});
 }
 
 void EventTimer::add_time_event(time_t eventTime, std::weak_ptr<EventTimer::Listener> listener, uint32_t token, time_t interval)
 {
-    Message message;
-    message.command = Command::AddEvent;
-    message.eventTime = eventTime;
-    message.listener = listener;
-    message.token = token;
-    message.interval = interval;
+    Message message{Command::AddEvent, EventData{eventTime, listener, interval, token}};
+    // message.command = Command::AddEvent;
+    // message.eventTime = eventTime;
+    // message.listener = listener;
+    // message.token = token;
+    // message.interval = interval;
     eventSocket->send_message(message);
 }
 
@@ -97,8 +102,11 @@ void thread_process()
                 switch (message.message.command)
                 {
                 case Command::AddEvent:
-                    printf("Adding event at %ld\n", message.message.eventTime);
-                    second2ListenerListMap[message.message.eventTime].push_back({message.message.listener, message.message.interval, message.message.token});
+                    // printf("Adding event at %ld\n", message.message.eventTime);
+                    {
+                        EventData &eventData = message.message.data.value();
+                        second2ListenerListMap[eventData.eventTime].push_back({eventData.listener, eventData.interval, eventData.token});
+                    }
                     break;
                 case Command::TimeChanged:
                     break;

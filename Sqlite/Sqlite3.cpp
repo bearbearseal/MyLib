@@ -143,19 +143,16 @@ optional<uint64_t> Sqlite3::execute_insert(const string &update, ...)
 
 bool do_sql_bind(sqlite3_stmt *stmt, variant<int64_t, double, string> parameter, size_t index)
 {
-    int result;
+    int result = SQLITE_ERROR;
     switch (parameter.index())
     {
     case 0:
-        printf("Binding as int64_t\n");
         result = sqlite3_bind_int(stmt, index, get<0>(parameter));
         break;
     case 1:
-        printf("Binding as double.\n");
         result = sqlite3_bind_double(stmt, index, get<1>(parameter));
         break;
     case 2:
-        printf("Beinding as text.\n");
         result = sqlite3_bind_text(stmt, index, get<2>(parameter).c_str(), get<2>(parameter).size(), NULL);
         break;
     }
