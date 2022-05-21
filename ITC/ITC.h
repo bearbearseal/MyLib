@@ -379,12 +379,10 @@ private:
 		dataMapLock.unlock();
 		// Start waiting.
 		auto result = j->second.waitCondition.wait_for(lock, duration);
-		// auto result = j->second.waitCondition.wait_for(lock, std::chrono::seconds(10));
 		// Got signal, check what kind it is
 		if (j->second.closing)
 		{
 			// A closing signal
-			// j->second.waitCondition.notify_one();
 			return {false, false};
 		}
 		else if (result == std::cv_status::timeout)
