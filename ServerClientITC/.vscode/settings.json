@@ -2,6 +2,7 @@
     "files.associations": {
         "optional": "cpp",
         "chrono": "cpp",
-        "ratio": "cpp"
+        "ratio": "cpp",
+        "string": "cpp"
     }
 }

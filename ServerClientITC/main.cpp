@@ -14,7 +14,7 @@ void thread_process_1(ServerClientItc<int, string>* itc)
         printf("Server socket wait message at %zu.\n", ms.count());
         serverSocket->wait_message(300ms);
         ms = chrono::duration_cast<chrono::milliseconds >(chrono::system_clock::now().time_since_epoch());
-        printf("Server socket check message at %zu.\n", ms.count());
+        printf("Server socket check message at %zu, got message = %s.\n", ms.count(), serverSocket->has_message() ? "yes" : "no");
         auto messagePair = serverSocket->get_message();
         if(messagePair.has_value())
         {
@@ -33,7 +33,7 @@ void thread_process_1(ServerClientItc<int, string>* itc)
         }
         else
         {
-            printf("Server socket time out.\n");
+            printf("Server socket time out, got message = %s.\n", serverSocket->has_message() ? "yes" : "no");
         }
     }
 }
@@ -52,11 +52,15 @@ void thread_process_2(ServerClientItc<int, string>* itc)
         printf("Client socket 1 wait message.\n");
         clientSocket->wait_message();
         ms = chrono::duration_cast<chrono::milliseconds >(chrono::system_clock::now().time_since_epoch());
-        printf("Client socket 1 got message at %zu.\n", ms.count());
+        printf("Client socket 1 check message at %zu, got message = %s.\n", ms.count(), clientSocket->has_message() ? "yes" : "no");
         auto message = clientSocket->get_message();
         if(message.has_value())
         {
             printf("Client socket 1 message: %s\n", message.value().c_str());
+        }
+        else
+        {
+            printf("Client socket 1 time out, got message = %s.\n", clientSocket->has_message() ? "yes" : "no");
         }
     }
 }
@@ -75,11 +79,15 @@ void thread_process_3(ServerClientItc<int, string>* itc)
         printf("Client socket 2 wait message.\n");
         clientSocket->wait_message();
         ms = chrono::duration_cast<chrono::milliseconds >(chrono::system_clock::now().time_since_epoch());
-        printf("Client socket 2 got message at %zu.\n", ms.count());
+        printf("Client socket 2 check message at %zu, got message = %s.\n", ms.count(), clientSocket->has_message() ? "yes" : "no");
         auto message = clientSocket->get_message();
         if(message.has_value())
         {
             printf("Client socket 2 message: %s\n", message.value().c_str());
+        }
+        else
+        {
+            printf("Client socket 2 time out, got message = %s.\n", clientSocket->has_message() ? "yes" : "no");
         }
     }
 }

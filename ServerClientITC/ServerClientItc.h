@@ -1,14 +1,12 @@
 #ifndef _SERVERCLIENTITC_H_
 #define _SERVERCLIENTITC_H_
 #include <vector>
-#include <tuple>
 #include <memory>
 #include <mutex>
 #include <optional>
 #include <list>
 #include <chrono>
 #include <condition_variable>
-
 
 template <typename Message2Server, typename Message2Client>
 class ServerClientItc
@@ -90,6 +88,14 @@ private:
         {
             return master.return_client_socket_to_pool(clientId.id);
         }
+        bool has_server_message()
+        {
+            return master.server_has_message();
+        }
+        bool has_client_message(ClientId clientId)
+        {
+            return master.client_has_message(clientId.id);
+        }
     private:
         ServerClientItc& master;
     };
@@ -137,6 +143,13 @@ public:
             if(shared == nullptr)
                 return {};
             return shared->get_server_message();
+        }
+        bool has_message()
+        {
+            auto shared = master.lock();
+            if(shared == nullptr)
+                return false;
+            return shared->has_server_message();
         }
     private:
         std::weak_ptr<Proxy> master;
@@ -191,6 +204,13 @@ public:
             if(shared == nullptr)
                 return {};
             return shared->get_client_message(myId.id);
+        }
+        bool has_message()
+        {
+            auto shared = master.lock();
+            if(shared == nullptr)
+                return false;
+            return shared->has_client_message(myId.id);
         }
     private:
         std::weak_ptr<Proxy> master;
@@ -359,6 +379,25 @@ private:
         Message2Client retVal = std::move(theData.messages.front());
         theData.messages.pop_front();
         return retVal;
+    }
+    bool server_has_message()
+    {
+        std::lock_guard<std::mutex> lock(serverData.messageMutex);
+        if(serverData.messages.empty())
+        {
+            return false;
+        }
+        return true;
+    }
+    bool client_has_message(size_t clientId)
+    {
+        ClientData& theData = clientsData.clientData[clientId];
+        std::lock_guard<std::mutex> lock(theData.messageMutex);
+        if(theData.messages.empty())
+        {
+            return false;
+        }
+        return true;
     }
 
 private:
