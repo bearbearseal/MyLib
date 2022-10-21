@@ -1,0 +1,12 @@
+[
+    {"Item1":"some value", "Item2":"other value", "Number1":"555", "Item4":"er YUY E@DR", "Number4":"419-24", "Number3":"423cGEs"},
+    {"Item1":"one value", "Item2":"two value", "Number1":"55", "Number4":"24"},
+    {"Item2":"some value", "Item3":"other value", "Item4":"more value", "Number3":"3145", "Number4":"419-24"},
+    {"Item1":"some value", "Item3":"hdfgn value", "Number1":"555", "Number2":"745hdfg", "Number4":"419-24"},
+    {"Item2":"some value", "Item3":"other value", "Item5":"df3m gf3", "Number2":"419-24"},
+    {"Item1":"some value", "Item2":"other value", "Number1":"555", "Number4":"419-24"},
+    {"Item1":"some reading", "Item2":"other data", "Number1":"555", "Item4":"er YUY E@DR", "Number4":"419-24", "Number3":"423cGEs"},
+    {"Item2":"bad value", "Item3":"good value", "Item4":"undecided value", "Number2":"3145", "Number3":"419-24"},
+    {"Item1":"some", "Item3":"hdfgn value", "Number1":"5e355", "Number2":"75hdfg", "Number4":"-419-24"},
+    {"Item1":"some value", "Item2":"other value", "Number1":"555", "Number4":"419-24"}
+]
