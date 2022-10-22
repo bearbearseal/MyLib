@@ -1,4 +1,4 @@
-OBJS = main.o FileIOer.o ArgumentExtractor.o
+OBJS = main.o FileIOer.o ArgumentExtractor.o TableBuilder.o
 CC = g++ -std=c++17
 CFLAGS = -Wall -c
 LFLAGS = -Wall
@@ -17,5 +17,7 @@ FileIOer.o: ../File/FileIOer.h ../File/FileIOer.cpp
 ArgumentExtractor.o: ../ArgumentExtractor/ArgumentExtractor.h ../ArgumentExtractor/ArgumentExtractor.cpp
 	$(CC) $(CFLAGS) ../ArgumentExtractor/ArgumentExtractor.cpp
 
+TableBuilder.o: TableBuilder.h TableBuilder.cpp
+	$(CC) $(CFLAGS) TableBuilder.cpp
 clean:
 	rm -f $(binaries) *.o

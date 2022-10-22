@@ -1,6 +1,6 @@
 #include <string>
 #include <unordered_map>
-#include <unordered_set>>
+#include <unordered_set>
 #include <vector>
 
 class TableBuilder
@@ -8,7 +8,7 @@ class TableBuilder
 public:
     TableBuilder();
     ~TableBuilder();
-    void next_line();
+    void new_line();
     void add_column(const std::string& columnName, const std::string& value);
     std::string build_table(const std::string& columnDeliminator, const std::string& rowBreaker);
 

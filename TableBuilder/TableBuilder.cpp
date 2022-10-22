@@ -4,7 +4,6 @@ using namespace std;
 
 TableBuilder::TableBuilder()
 {
-    theRows.push_back(std::unordered_map<std::string, std::string>());
 }
 
 TableBuilder::~TableBuilder()
@@ -12,13 +11,15 @@ TableBuilder::~TableBuilder()
 
 }
 
-void TableBuilder::next_line()
+void TableBuilder::new_line()
 {
     theRows.push_back(std::unordered_map<std::string, std::string>());
 }
 
 void TableBuilder::add_column(const std::string& columnName, const std::string& value)
 {
+    if(theRows.empty())
+        theRows.push_back(std::unordered_map<std::string, std::string>());
     theColumns.emplace(columnName);
     theRows[theRows.size()-1][columnName] = value;
 }
