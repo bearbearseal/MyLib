@@ -11,6 +11,7 @@ SyncedSerialPort::~SyncedSerialPort() {
 }
 
 void SyncedSerialPort::open(const std::string& portName, const SyncedSerialPort::Config& config) {
+    //printf("Opening serial port %s\n", portName.c_str());
     serialPort.open(portName);
     SerialPort::Config _config;
     _config.baudrate = config.baudrate;
@@ -33,6 +34,7 @@ void SyncedSerialPort::open(const std::string& portName, uint32_t baudrate) {
 
 std::string SyncedSerialPort::write_then_read(const std::string& writeData, size_t expectedReplyLength, std::chrono::milliseconds timeout) {
     lock_guard<mutex> lock(portMutex);
+    //printf("Writing %zu bytes expects %zu bytes.\n", writeData.size(), expectedReplyLength);
     auto result = serialPort.write(writeData);
     std::string received;
     if(result.first && result.second == writeData.size()) {
@@ -43,6 +45,7 @@ std::string SyncedSerialPort::write_then_read(const std::string& writeData, size
         }
     }
     this_thread::sleep_for(delay);
+    //printf("Got %zu bytes reply.\n", received.size());
     return received;
 }
 
