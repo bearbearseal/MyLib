@@ -62,14 +62,8 @@ public:
         BulkInsert() {}
 
     public:
-        ~BulkInsert()
-        {
-            sqlite3_finalize(stmt);
-        }
-        void add_line(T first, Args... rest)
-        {
-            lines.push_back(create_my_tuple(first, rest...));
-        }
+        ~BulkInsert() { sqlite3_finalize(stmt); }
+        void add_line(T first, Args... rest) { lines.push_back(create_my_tuple(first, rest...)); }
         std::optional<int64_t> commit_insert()
         {
             int rc = sqlite3_exec(db, "BEGIN TRANSACTION", NULL, NULL, NULL);
@@ -78,28 +72,35 @@ public:
                 commit_line(lines[i]);
                 rc = sqlite3_step(stmt);
                 if (rc != SQLITE_DONE)
-                {
-                    printf("Failed 1\n");
                     goto failed_end;
-                }
                 rc = sqlite3_reset(stmt);
                 if (rc != SQLITE_OK)
-                {
-                    printf("Failed 2\n");
                     goto failed_end;
-                }
             }
             rc = sqlite3_exec(db, "COMMIT TRANSACTION", NULL, NULL, NULL);
             if (rc != SQLITE_OK)
-            {
-                printf("Failed 3\n");
                 goto failed_end;
-            }
             lines.clear();
             return sqlite3_last_insert_rowid(db);
         failed_end:
             lines.clear();
             return {};
+        }
+        std::optional<int64_t> quick_update(T first, Args... rest)
+        {
+            int rc = sqlite3_exec(db, "BEGIN TRANSACTION", NULL, NULL, NULL);
+            auto aLine = create_my_tuple(first, rest...);
+            commit_line(aLine);
+            rc = sqlite3_step(stmt);
+            if(rc != SQLITE_DONE)
+                return {};
+            rc = sqlite3_reset(stmt);
+            if(rc != SQLITE_OK)
+                return {};
+            rc = sqlite3_exec(db, "COMMIT TRANSACTION", NULL, NULL, NULL);
+            if (rc != SQLITE_OK)
+                return {};
+            return sqlite3_last_insert_rowid(db);
         }
         inline size_t count_line() { return lines.size(); }
 
@@ -121,9 +122,6 @@ public:
         bool create_bulk_insert(sqlite3 *_db, const std::string &statement)
         {
             db = _db;
-            // int retVal = sqlite3_prepare_v2(db, statement.c_str(), statement.size(), &stmt, NULL);
-            // printf("RetVal %d\n", retVal);
-            // return retVal == SQLITE_OK;
             return sqlite3_prepare_v2(db, statement.c_str(), statement.size(), &stmt, NULL) == SQLITE_OK;
         }
         inline std::tuple<T, Args...> create_my_tuple(T first, Args... rest)

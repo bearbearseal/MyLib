@@ -1,7 +1,6 @@
 #ifndef _Variable_H_
 #define _Variable_H_
 #include "Value.h"
-//#include "PrioritizedValue.h"
 #include <memory>
 #include <vector>
 #include <unordered_set>

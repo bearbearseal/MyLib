@@ -194,7 +194,6 @@ namespace Test
     void test_bulk_insert()
     {
         Sqlite3 sqlite("/var/sqlite/PointLog.db");
-        // unique_ptr<Sqlite3::BulkInsert<string, int64_t>> bulkInsert =
         {
             auto bulkInsert = move(sqlite.create_bulk_insert<int64_t, int64_t, int64_t, int64_t, double>("Insert Into table1 (Id, Device, Point, SecTime, Value) VALUES (?, ?, ?, ?, ?)"));
             printf("After create bulk.\n");
@@ -211,22 +210,7 @@ namespace Test
             {
                 printf("Empty value.\n");
             }
-            /*
-            auto bulkInsert = sqlite.create_bulk_insert<string, int64_t>("INSERT Into TableInfo (Name, BeginSec) VALUES (?, ?)");
-            printf("After create bulk.\n");
-            if (bulkInsert != nullptr)
-            {
-                //printf("Has value.\n");
-                bulkInsert->add_line("table10", int64_t(5000));
-                bulkInsert->add_line("table11", int64_t(6000));
-                bulkInsert->add_line("table12", int64_t(7000));
-                bulkInsert->commit_insert();
-            }
-            else
-            {
-                printf("Empty value.\n");
-            }
-            */
+            bulkInsert->quick_update(5, 4, 3, 1004, 90.4);
         }
         printf("Going to end.\n");
     }

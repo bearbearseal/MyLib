@@ -1,6 +1,7 @@
-OBJS = main.o Sqlite3.o Sqlite3JsonTalker.o
-OBJS += Sqlite3TcpListener.o TcpListener.o TcpSocket.o
-OBJS += Sqlite3UdpListener.o UdpListener.o UdpSocket.o
+OFOLDER = ObjectFolder/
+OBJS = $(OFOLDER)main.o $(OFOLDER)Sqlite3.o $(OFOLDER)Sqlite3JsonTalker.o
+OBJS += $(OFOLDER)Sqlite3TcpListener.o $(OFOLDER)TcpListener.o $(OFOLDER)TcpSocket.o
+OBJS += $(OFOLDER)Sqlite3UdpListener.o $(OFOLDER)UdpListener.o $(OFOLDER)UdpSocket.o
 CC = g++ -std=c++17
 CFLAGS = -Wall -c
 LFLAGS = -Wall
@@ -10,32 +11,32 @@ binaries = theMain.out
 main : $(OBJS)
 	$(CC) $(LFLAGS) $(OBJS) $(LIBS) -o $(binaries)
 
-main.o : main.cpp Test.hpp
-	$(CC) $(CFLAGS) main.cpp
+$(OFOLDER)main.o : main.cpp Test.hpp
+	$(CC) $(CFLAGS) main.cpp -o $@
 
-Sqlite3.o : Sqlite3.h Sqlite3.cpp
-	$(CC) $(CFLAGS) Sqlite3.cpp
+$(OFOLDER)Sqlite3.o : Sqlite3.h Sqlite3.cpp
+	$(CC) $(CFLAGS) Sqlite3.cpp -o $@
 
-Sqlite3JsonTalker.o: Sqlite3JsonTalker.h Sqlite3JsonTalker.cpp
-	$(CC) $(CFLAGS) Sqlite3JsonTalker.cpp
+$(OFOLDER)Sqlite3JsonTalker.o: Sqlite3JsonTalker.h Sqlite3JsonTalker.cpp
+	$(CC) $(CFLAGS) Sqlite3JsonTalker.cpp -o $@
 
-Sqlite3TcpListener.o: Sqlite3TcpListener.h Sqlite3TcpListener.cpp
-	$(CC) $(CFLAGS) Sqlite3TcpListener.cpp
+$(OFOLDER)Sqlite3TcpListener.o: Sqlite3TcpListener.h Sqlite3TcpListener.cpp
+	$(CC) $(CFLAGS) Sqlite3TcpListener.cpp -o $@
 
-TcpListener.o: ../TcpSocket/TcpListener.h ../TcpSocket/TcpListener.cpp
-	$(CC) $(CFLAGS) ../TcpSocket/TcpListener.cpp
+$(OFOLDER)TcpListener.o: ../TcpSocket/TcpListener.h ../TcpSocket/TcpListener.cpp
+	$(CC) $(CFLAGS) ../TcpSocket/TcpListener.cpp -o $@
 
-TcpSocket.o: ../TcpSocket/TcpSocket.h ../TcpSocket/TcpSocket.cpp
-	$(CC) $(CFLAGS) ../TcpSocket/TcpSocket.cpp
+$(OFOLDER)TcpSocket.o: ../TcpSocket/TcpSocket.h ../TcpSocket/TcpSocket.cpp
+	$(CC) $(CFLAGS) ../TcpSocket/TcpSocket.cpp -o $@
 
-Sqlite3UdpListener.o: Sqlite3UdpListener.h Sqlite3UdpListener.cpp
-	$(CC) $(CFLAGS) Sqlite3UdpListener.cpp
+$(OFOLDER)Sqlite3UdpListener.o: Sqlite3UdpListener.h Sqlite3UdpListener.cpp
+	$(CC) $(CFLAGS) Sqlite3UdpListener.cpp -o $@
 
-UdpListener.o: ../UdpSocket/UdpListener.h ../UdpSocket/UdpListener.cpp
-	$(CC) $(CFLAGS) ../UdpSocket/UdpListener.cpp
+$(OFOLDER)UdpListener.o: ../UdpSocket/UdpListener.h ../UdpSocket/UdpListener.cpp
+	$(CC) $(CFLAGS) ../UdpSocket/UdpListener.cpp -o $@
 
-UdpSocket.o: ../UdpSocket/UdpSocket.h ../UdpSocket/UdpSocket.cpp
-	$(CC) $(CFLAGS) ../UdpSocket/UdpSocket.cpp
+$(OFOLDER)UdpSocket.o: ../UdpSocket/UdpSocket.h ../UdpSocket/UdpSocket.cpp
+	$(CC) $(CFLAGS) ../UdpSocket/UdpSocket.cpp -o $@
 
 clean:
-	rm -f $(binaries) *.o
+	rm -f $(binaries) $(OFOLDER)*.o
