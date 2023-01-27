@@ -195,22 +195,22 @@ namespace Test
     {
         Sqlite3 sqlite("/var/sqlite/PointLog.db");
         {
-            auto bulkInsert = move(sqlite.create_bulk_insert<int64_t, int64_t, int64_t, int64_t, double>("Insert Into table1 (Id, Device, Point, SecTime, Value) VALUES (?, ?, ?, ?, ?)"));
+            auto bulkInsert = move(sqlite.create_prepared_statement<int64_t, int64_t, int64_t, int64_t, double>("Insert Into table1 (Id, Device, Point, SecTime, Value) VALUES (?, ?, ?, ?, ?)"));
             printf("After create bulk.\n");
             if (bulkInsert != nullptr)
             {
                 //printf("Has value.\n");
-                bulkInsert->add_line(1, 1, 1, 100, 80.5);
-                bulkInsert->add_line(2, 1, 2, 1200, 180.5);
-                bulkInsert->add_line(3, 2, 1, 1030, 8.5);
-                bulkInsert->add_line(4, 2, 3, 1004, 80.4);
+                bulkInsert->add_line(6, 1, 1, 100, 80.5);
+                bulkInsert->add_line(7, 1, 2, 1200, 180.5);
+                bulkInsert->add_line(8, 2, 1, 1030, 8.5);
+                bulkInsert->add_line(9, 2, 3, 1004, 80.4);
                 bulkInsert->commit_insert();
             }
             else
             {
                 printf("Empty value.\n");
             }
-            bulkInsert->quick_update(5, 4, 3, 1004, 90.4);
+            bulkInsert->quick_update(10, 4, 3, 1004, 90.4);
         }
         printf("Going to end.\n");
     }

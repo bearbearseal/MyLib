@@ -54,15 +54,15 @@ public:
     };
 
     template <typename T, typename... Args>
-    class BulkInsert
+    class PreparedStatement
     {
         friend class Sqlite3;
 
     private:
-        BulkInsert() {}
+        PreparedStatement() {}
 
     public:
-        ~BulkInsert() { sqlite3_finalize(stmt); }
+        ~PreparedStatement() { sqlite3_finalize(stmt); }
         void add_line(T first, Args... rest) { lines.push_back(create_my_tuple(first, rest...)); }
         std::optional<int64_t> commit_insert()
         {
@@ -119,7 +119,7 @@ public:
         bool do_bind(size_t index, int64_t item) { return sqlite3_bind_int(stmt, index, item) == SQLITE_OK; }
         bool do_bind(size_t index, double item) { return sqlite3_bind_double(stmt, index, item) == SQLITE_OK; }
         bool do_bind(size_t index, const std::string &item) { return sqlite3_bind_text(stmt, index, item.c_str(), item.size(), NULL) == SQLITE_OK; }
-        bool create_bulk_insert(sqlite3 *_db, const std::string &statement)
+        bool create_prepared_statement(sqlite3 *_db, const std::string &statement)
         {
             db = _db;
             return sqlite3_prepare_v2(db, statement.c_str(), statement.size(), &stmt, NULL) == SQLITE_OK;
@@ -141,10 +141,10 @@ public:
     // returns last insert id.
     std::optional<uint64_t> execute_insert(const std::string &update, ...);
     template <typename T, typename... Args>
-    std::unique_ptr<BulkInsert<T, Args...>> create_bulk_insert(const std::string &statement)
+    std::unique_ptr<PreparedStatement<T, Args...>> create_prepared_statement(const std::string &statement)
     {
-        std::unique_ptr<BulkInsert<T, Args...>> retVal(new BulkInsert<T, Args...>());
-        if (retVal->create_bulk_insert(db, statement))
+        std::unique_ptr<PreparedStatement<T, Args...>> retVal(new PreparedStatement<T, Args...>());
+        if (retVal->create_prepared_statement(db, statement))
         {
             return retVal;
         }
