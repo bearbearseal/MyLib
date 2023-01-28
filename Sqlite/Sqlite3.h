@@ -7,11 +7,22 @@
 #include <tuple>
 #include <memory>
 #include <vector>
+#include <mutex>
 #include <unordered_map>
 
 class Sqlite3
 {
+    friend class PreparedStatement;
+private:
+    struct Sqlite3Connection
+    {
+        ~Sqlite3Connection() { sqlite3_close(db); }
+        std::mutex theMutex;
+        sqlite3* db;
+    };
+    Sqlite3(sqlite3 *db);
 public:
+    static std::unique_ptr<Sqlite3> open_database(const std::string& databaseName);
     enum class ErrorCode
     {
         SqliteError = 1,
@@ -62,11 +73,15 @@ public:
         PreparedStatement() {}
 
     public:
-        ~PreparedStatement() { sqlite3_finalize(stmt); }
+        ~PreparedStatement()
+        {
+            sqlite3_finalize(stmt);
+        }
         void add_line(T first, Args... rest) { lines.push_back(create_my_tuple(first, rest...)); }
         std::optional<int64_t> commit_insert()
         {
-            int rc = sqlite3_exec(db, "BEGIN TRANSACTION", NULL, NULL, NULL);
+            std::lock_guard<std::mutex> lock(connection->theMutex);
+            int rc = sqlite3_exec(connection->db, "BEGIN TRANSACTION", NULL, NULL, NULL);
             for (size_t i = 0; i < lines.size(); ++i)
             {
                 commit_line(lines[i]);
@@ -77,18 +92,19 @@ public:
                 if (rc != SQLITE_OK)
                     goto failed_end;
             }
-            rc = sqlite3_exec(db, "COMMIT TRANSACTION", NULL, NULL, NULL);
+            rc = sqlite3_exec(connection->db, "COMMIT TRANSACTION", NULL, NULL, NULL);
             if (rc != SQLITE_OK)
                 goto failed_end;
             lines.clear();
-            return sqlite3_last_insert_rowid(db);
+            return sqlite3_last_insert_rowid(connection->db);
         failed_end:
             lines.clear();
             return {};
         }
         std::optional<int64_t> quick_update(T first, Args... rest)
         {
-            int rc = sqlite3_exec(db, "BEGIN TRANSACTION", NULL, NULL, NULL);
+            std::lock_guard<std::mutex> lock(connection->theMutex);
+            int rc = sqlite3_exec(connection->db, "BEGIN TRANSACTION", NULL, NULL, NULL);
             auto aLine = create_my_tuple(first, rest...);
             commit_line(aLine);
             rc = sqlite3_step(stmt);
@@ -97,10 +113,10 @@ public:
             rc = sqlite3_reset(stmt);
             if(rc != SQLITE_OK)
                 return {};
-            rc = sqlite3_exec(db, "COMMIT TRANSACTION", NULL, NULL, NULL);
+            rc = sqlite3_exec(connection->db, "COMMIT TRANSACTION", NULL, NULL, NULL);
             if (rc != SQLITE_OK)
                 return {};
-            return sqlite3_last_insert_rowid(db);
+            return sqlite3_last_insert_rowid(connection->db);
         }
         inline size_t count_line() { return lines.size(); }
 
@@ -119,21 +135,23 @@ public:
         bool do_bind(size_t index, int64_t item) { return sqlite3_bind_int(stmt, index, item) == SQLITE_OK; }
         bool do_bind(size_t index, double item) { return sqlite3_bind_double(stmt, index, item) == SQLITE_OK; }
         bool do_bind(size_t index, const std::string &item) { return sqlite3_bind_text(stmt, index, item.c_str(), item.size(), NULL) == SQLITE_OK; }
-        bool create_prepared_statement(sqlite3 *_db, const std::string &statement)
+        bool create_prepared_statement(std::shared_ptr<Sqlite3Connection> _connection, const std::string &statement)
         {
-            db = _db;
-            return sqlite3_prepare_v2(db, statement.c_str(), statement.size(), &stmt, NULL) == SQLITE_OK;
+            connection = _connection;
+            std::lock_guard<std::mutex> lock(connection->theMutex);
+            return sqlite3_prepare_v2(connection->db, statement.c_str(), statement.size(), &stmt, NULL) == SQLITE_OK;
         }
         inline std::tuple<T, Args...> create_my_tuple(T first, Args... rest)
         {
             return tuple_cat(std::make_tuple(first), std::make_tuple(rest...));
         }
-        sqlite3 *db;
+        std::shared_ptr<Sqlite3Connection> connection;
         sqlite3_stmt *stmt;
         std::vector<std::tuple<T, Args...>> lines;
     };
 
-    Sqlite3(const std::string &name);
+private:
+public:
     ~Sqlite3();
     std::unique_ptr<ResultSet> execute_query(const std::string &query, ...) const;
     bool execute_update(const std::string &update, ...);
@@ -144,7 +162,7 @@ public:
     std::unique_ptr<PreparedStatement<T, Args...>> create_prepared_statement(const std::string &statement)
     {
         std::unique_ptr<PreparedStatement<T, Args...>> retVal(new PreparedStatement<T, Args...>());
-        if (retVal->create_prepared_statement(db, statement))
+        if (retVal->create_prepared_statement(connection, statement))
         {
             return retVal;
         }
@@ -152,7 +170,8 @@ public:
     }
 
 private:
-    sqlite3 *db;
+    std::shared_ptr<Sqlite3Connection> connection;
+    
 };
 
 #endif

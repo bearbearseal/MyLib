@@ -10,6 +10,7 @@ using namespace std;
 
 namespace Test
 {
+    /*
     void run_sqlite3()
     {
         try
@@ -48,7 +49,9 @@ namespace Test
             printf("%s\n", e.message.c_str());
         }
     }
+    */
 
+    /*
     void run_tcp_udp_listener()
     {
         std::shared_ptr<Sqlite3JsonTalker> jsonTalker = std::make_shared<Sqlite3JsonTalker>("/var/sqlite/NcuConfig.db");
@@ -61,7 +64,8 @@ namespace Test
             std::this_thread::sleep_for(std::chrono::seconds(1));
         }
     }
-
+    */
+ 
     void use_raw()
     {
         sqlite3 *theDb;
@@ -161,27 +165,6 @@ namespace Test
             }
             sqlite3_reset(stmt);
             sqlite3_exec(db, "COMMIT TRANSACTION", NULL, NULL, &errorMessage);
-            /*
-            for(int x=0;x<saData.size();x++){
-                // bind the value
-                sqlite3_bind_int(stmt, 1, saData[x].at("lastSAId"));
-                std::string hash = saData[x].at("public_key");
-                sqlite3_bind_text(stmt, 2,  hash.c_str(), strlen(hash.c_str()), 0);
-                sqlite3_bind_int64(stmt, 3, saData[x].at("amount"));
-                string amount_index = saData[x].at("amount_idx");
-                sqlite3_bind_int(stmt, 4, atoi(amount_index.c_str()));
-
-                int retVal = sqlite3_step(stmt);
-                if (retVal != SQLITE_DONE)
-                {
-                    printf("Commit Failed! %d\n", retVal);
-                }
-
-                sqlite3_reset(stmt);
-            }
-
-            sqlite3_exec(db, "COMMIT TRANSACTION", NULL, NULL, &errorMessage);
-            */
             sqlite3_finalize(stmt);
         }
         else
@@ -193,24 +176,24 @@ namespace Test
 
     void test_bulk_insert()
     {
-        Sqlite3 sqlite("/var/sqlite/PointLog.db");
+        auto sqlite = move(Sqlite3::open_database("/var/sqlite/PointLog.db"));
         {
-            auto bulkInsert = move(sqlite.create_prepared_statement<int64_t, int64_t, int64_t, int64_t, double>("Insert Into table1 (Id, Device, Point, SecTime, Value) VALUES (?, ?, ?, ?, ?)"));
+            auto bulkInsert = move(sqlite->create_prepared_statement<int64_t, int64_t, int64_t, int64_t, double>("Insert Into table1 (Id, Device, Point, SecTime, Value) VALUES (?, ?, ?, ?, ?)"));
             printf("After create bulk.\n");
             if (bulkInsert != nullptr)
             {
-                //printf("Has value.\n");
-                bulkInsert->add_line(6, 1, 1, 100, 80.5);
-                bulkInsert->add_line(7, 1, 2, 1200, 180.5);
-                bulkInsert->add_line(8, 2, 1, 1030, 8.5);
-                bulkInsert->add_line(9, 2, 3, 1004, 80.4);
+                // printf("Has value.\n");
+                bulkInsert->add_line(21, 1, 1, 100, 80.5);
+                bulkInsert->add_line(22, 1, 2, 1200, 180.5);
+                bulkInsert->add_line(23, 2, 1, 1030, 8.5);
+                bulkInsert->add_line(24, 2, 3, 1004, 80.4);
+                bulkInsert->quick_update(25, 4, 3, 1004, 90.4);
                 bulkInsert->commit_insert();
             }
             else
             {
                 printf("Empty value.\n");
             }
-            bulkInsert->quick_update(10, 4, 3, 1004, 90.4);
         }
         printf("Going to end.\n");
     }

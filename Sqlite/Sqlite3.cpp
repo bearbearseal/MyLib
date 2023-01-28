@@ -11,23 +11,22 @@ const Sqlite3::Exception Sqlite3::InvalidRow = {Sqlite3::ErrorCode::InvalidRow, 
 const Sqlite3::Exception Sqlite3::InvalidColumn = {Sqlite3::ErrorCode::InvalidColumn, "Invalid Column"};
 const string emptyString("");
 
-Sqlite3::Sqlite3(const std::string &name)
+unique_ptr<Sqlite3> Sqlite3::open_database(const std::string &databaseName)
 {
-    db = nullptr;
-    int result = sqlite3_open(name.c_str(), &db);
+    sqlite3 *db = nullptr;
+    int result = sqlite3_open(databaseName.c_str(), &db);
     if (result)
-    {
-        throw OpenFailed;
-    }
+        return nullptr;
+    return unique_ptr<Sqlite3>(new Sqlite3(db));
 }
 
-Sqlite3::~Sqlite3()
+Sqlite3::Sqlite3(sqlite3 *_db)
 {
-    if (db != nullptr)
-    {
-        sqlite3_close(db);
-    }
+    connection = make_shared<Sqlite3Connection>();
+    connection->db = _db;
 }
+
+Sqlite3::~Sqlite3() {}
 
 int select_call_back(void *parameter, int argc, char **argv, char **azColName)
 {
@@ -68,14 +67,17 @@ std::unique_ptr<Sqlite3::ResultSet> Sqlite3::execute_query(const string &query, 
     va_end(parameters);
     tuple<vector<vector<pair<bool, string>>>, unordered_map<string, size_t>, vector<string>> retVal;
     char *zErrMessage = nullptr;
-    int result = sqlite3_exec(db, tempBuffer, select_call_back, &retVal, &zErrMessage);
-    if (result != SQLITE_OK)
     {
-        printf("Error code: %d\nMessage: %s\n", result, zErrMessage);
-        // throw SqliteError;
-        // throw Exception(Sqlite3::ErrorCode::SqliteError, zErrMessage, result);
-        sqlite3_free(zErrMessage);
-        return nullptr;
+        std::lock_guard<mutex> lock(connection->theMutex);
+        int result = sqlite3_exec(connection->db, tempBuffer, select_call_back, &retVal, &zErrMessage);
+        if (result != SQLITE_OK)
+        {
+            printf("Error code: %d\nMessage: %s\n", result, zErrMessage);
+            // throw SqliteError;
+            // throw Exception(Sqlite3::ErrorCode::SqliteError, zErrMessage, result);
+            sqlite3_free(zErrMessage);
+            return nullptr;
+        }
     }
     return make_unique<ResultSet>(get<0>(retVal), get<1>(retVal), get<2>(retVal));
 }
@@ -88,25 +90,29 @@ bool Sqlite3::execute_update(const string &update, ...)
     vsprintf(tempBuffer, update.c_str(), parameters);
     va_end(parameters);
     char *zErrMessage = nullptr;
-    int result = sqlite3_exec(db, tempBuffer, nullptr, nullptr, &zErrMessage);
-    if (result != SQLITE_OK)
     {
-        printf("Error code: %d\nMessage: %s\n", result, zErrMessage);
-        // throw SqliteError;
-        // throw Exception(Sqlite3::ErrorCode::SqliteError, zErrMessage, result);
-        sqlite3_free(zErrMessage);
-        return false;
+        std::lock_guard<mutex> lock(connection->theMutex);
+        int result = sqlite3_exec(connection->db, tempBuffer, nullptr, nullptr, &zErrMessage);
+        if (result != SQLITE_OK)
+        {
+            printf("Error code: %d\nMessage: %s\n", result, zErrMessage);
+            // throw SqliteError;
+            // throw Exception(Sqlite3::ErrorCode::SqliteError, zErrMessage, result);
+            sqlite3_free(zErrMessage);
+            return false;
+        }
     }
     return true;
 }
 
 bool Sqlite3::execute_atomic_update(const std::vector<std::string> &update)
 {
-    int rc = sqlite3_exec(db, "BEGIN TRANSACTION", NULL, NULL, NULL);
+    std::lock_guard<mutex> lock(connection->theMutex);
+    int rc = sqlite3_exec(connection->db, "BEGIN TRANSACTION", NULL, NULL, NULL);
     char *zErrMessage = nullptr;
     for (size_t i = 0; i < update.size(); ++i)
     {
-        rc = sqlite3_exec(db, update[i].c_str(), NULL, NULL, &zErrMessage);
+        rc = sqlite3_exec(connection->db, update[i].c_str(), NULL, NULL, &zErrMessage);
         if (rc != SQLITE_OK)
         {
             printf("Error code: %d\nMessage: %s\n", rc, zErrMessage);
@@ -114,7 +120,7 @@ bool Sqlite3::execute_atomic_update(const std::vector<std::string> &update)
             return false;
         }
     }
-    if(sqlite3_exec(db, "COMMIT TRANSACTION", NULL, NULL, NULL) == SQLITE_OK)
+    if (sqlite3_exec(connection->db, "COMMIT TRANSACTION", NULL, NULL, NULL) == SQLITE_OK)
     {
         return true;
     }
@@ -129,7 +135,8 @@ optional<uint64_t> Sqlite3::execute_insert(const string &update, ...)
     vsprintf(tempBuffer, update.c_str(), parameters);
     va_end(parameters);
     char *zErrMessage = nullptr;
-    int result = sqlite3_exec(db, tempBuffer, nullptr, nullptr, &zErrMessage);
+    std::lock_guard<mutex> lock(connection->theMutex);
+    int result = sqlite3_exec(connection->db, tempBuffer, nullptr, nullptr, &zErrMessage);
     if (result != SQLITE_OK)
     {
         printf("Error code: %d\nMessage: %s\n", result, zErrMessage);
@@ -138,7 +145,7 @@ optional<uint64_t> Sqlite3::execute_insert(const string &update, ...)
         sqlite3_free(zErrMessage);
         return {};
     }
-    return sqlite3_last_insert_rowid(db);
+    return sqlite3_last_insert_rowid(connection->db);
 }
 
 bool do_sql_bind(sqlite3_stmt *stmt, variant<int64_t, double, string> parameter, size_t index)
