@@ -3,8 +3,9 @@
 
 using namespace std;
 
-Sqlite3JsonTalker::Sqlite3JsonTalker(const std::string& dbName) : theDb(dbName) {
-
+Sqlite3JsonTalker::Sqlite3JsonTalker(const std::string& dbName)
+{
+	dbConnection = Sqlite3::open_database(dbName);
 }
 
 Sqlite3JsonTalker::~Sqlite3JsonTalker() {
@@ -32,6 +33,12 @@ nlohmann::json to_json(std::unique_ptr<Sqlite3::ResultSet>& resultSet) {
 
 string Sqlite3JsonTalker::execute(const std::string& input) {
     nlohmann::json theReply;
+	if(dbConnection == nullptr)
+	{
+		theReply["Status"] = "Bad";
+		theReply["Message"] = "Database open failed";
+		return theReply.dump() + '\n';
+	}
     nlohmann::json theJson;
     try {
         theJson = nlohmann::json::parse(input);
@@ -73,9 +80,8 @@ string Sqlite3JsonTalker::execute(const std::string& input) {
     if(!command.compare(Command_Query)) {
         std::unique_ptr<Sqlite3::ResultSet> result;
 		{
-			lock_guard<mutex> lock(dbMutex);
 			try {
-				result = theDb.execute_query(statement);
+				result = dbConnection->execute_query(statement);
 			} catch(Sqlite3::Exception e) {
 				theReply["Status"] = "Bad";
 				theReply["Message"] = e.message;
@@ -96,9 +102,8 @@ string Sqlite3JsonTalker::execute(const std::string& input) {
     else if(!command.compare(Command_Update)) {
         bool result;
 		{
-			lock_guard<mutex> lock(dbMutex);
 			try {
-				result = theDb.execute_update(statement);
+				result = dbConnection->execute_update(statement);
 			} catch(Sqlite3::Exception e) {
 				theReply["Status"] = "Bad";
 				theReply["Message"] = e.message;

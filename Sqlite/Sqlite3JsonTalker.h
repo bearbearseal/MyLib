@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <memory>
 #include <mutex>
 #include "Sqlite3.h"
 
@@ -16,6 +17,5 @@ public:
     std::string execute(const std::string& input);
 
 private:
-    std::mutex dbMutex;
-    Sqlite3 theDb;
+    std::unique_ptr<Sqlite3> dbConnection;
 };

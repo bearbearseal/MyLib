@@ -10,13 +10,12 @@ using namespace std;
 
 namespace Test
 {
-    /*
     void run_sqlite3()
     {
         try
         {
-            Sqlite3 sqlite("NcuConfig.db");
-            auto result = sqlite.execute_query("Select * from ModbusIpPoint");
+            auto sqlite = Sqlite3::open_database("NcuConfig.db");
+            auto result = sqlite->execute_query("Select * from ModbusIpPoint");
             for (size_t i = 0; i < result->get_row_count(); ++i)
             {
                 for (size_t j = 0; j < result->get_column_count(); ++j)
@@ -40,8 +39,8 @@ namespace Test
         }
         try
         {
-            Sqlite3 sqlite("/var/sqlite/NcuAlarm.db");
-            auto result = sqlite.execute_update("Insert into Alarm (Message)Values('dsfretrett')");
+            auto sqlite = Sqlite3::open_database("/var/sqlite/NcuAlarm.db");
+            auto result = sqlite->execute_update("Insert into Alarm (Message)Values('dsfretrett')");
             printf("%s\n", result ? "Good" : "Bad");
         }
         catch (Sqlite3::Exception e)
@@ -49,9 +48,7 @@ namespace Test
             printf("%s\n", e.message.c_str());
         }
     }
-    */
 
-    /*
     void run_tcp_udp_listener()
     {
         std::shared_ptr<Sqlite3JsonTalker> jsonTalker = std::make_shared<Sqlite3JsonTalker>("/var/sqlite/NcuConfig.db");
@@ -64,7 +61,6 @@ namespace Test
             std::this_thread::sleep_for(std::chrono::seconds(1));
         }
     }
-    */
  
     void use_raw()
     {

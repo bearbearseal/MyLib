@@ -45,13 +45,9 @@ int select_call_back(void *parameter, int argc, char **argv, char **azColName)
     for (int i = 0; i < argc; ++i)
     {
         if (argv[i] != NULL)
-        {
             row.push_back({true, argv[i]});
-        }
         else
-        {
             row.push_back({false, string()});
-        }
     }
     vector<vector<pair<bool, string>>> &rowData = get<0>(*retVal);
     rowData.push_back(move(row));
@@ -185,105 +181,71 @@ Sqlite3::ResultSet::~ResultSet()
 const string &Sqlite3::ResultSet::get_column_name(size_t index) const
 {
     if (index >= columnNames.size())
-    {
         return emptyString;
-    }
     return columnNames[index];
 }
 
 pair<bool, const string &> Sqlite3::ResultSet::get_string(size_t row, size_t column) const
 {
     if (row > data.size())
-    {
         throw InvalidRow;
-    }
     if (column > names.size())
-    {
         throw InvalidColumn;
-    }
     return {data[row][column].first, data[row][column].second};
 }
 
 pair<bool, const string &> Sqlite3::ResultSet::get_string(size_t row, const std::string &column) const
 {
     if (row > data.size())
-    {
         throw InvalidRow;
-    }
     auto i = names.find(column);
     if (i == names.end())
-    {
         throw InvalidColumn;
-    }
     return {data[row][i->second].first, data[row][i->second].second};
 }
 
 pair<bool, int64_t> Sqlite3::ResultSet::get_integer(size_t row, size_t column) const
 {
     if (row > data.size())
-    {
         throw InvalidRow;
-    }
     if (column > names.size())
-    {
         throw InvalidColumn;
-    }
     if (!data[row][column].second.size())
-    {
         return {false, 0};
-    }
     return {data[row][column].first, stoll(data[row][column].second)};
 }
 
 pair<bool, int64_t> Sqlite3::ResultSet::get_integer(size_t row, const std::string &column) const
 {
     if (row > data.size())
-    {
         throw InvalidRow;
-    }
     auto i = names.find(column);
     if (i == names.end())
-    {
         throw InvalidColumn;
-    }
     if (!data[row][i->second].second.size())
-    {
         return {false, 0};
-    }
     return {data[row][i->second].first, stoll(data[row][i->second].second)};
 }
 
 pair<bool, double> Sqlite3::ResultSet::get_float(size_t row, size_t column) const
 {
     if (row > data.size())
-    {
         throw InvalidRow;
-    }
     if (column > names.size())
-    {
         throw InvalidColumn;
-    }
     if (!data[row][column].second.size())
-    {
         return {false, std::numeric_limits<double>::quiet_NaN()};
-    }
     return {data[row][column].first, stod(data[row][column].second)};
 }
 
 pair<bool, double> Sqlite3::ResultSet::get_float(size_t row, const std::string &column) const
 {
     if (row > data.size())
-    {
         throw InvalidRow;
-    }
     auto i = names.find(column);
     if (i == names.end())
-    {
         throw InvalidColumn;
-    }
     if (!data[row][i->second].second.size())
-    {
         return {false, std::numeric_limits<double>::quiet_NaN()};
-    }
     return {data[row][i->second].first, stod(data[row][i->second].second)};
 }
