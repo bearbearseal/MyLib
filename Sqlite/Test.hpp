@@ -1,6 +1,7 @@
 #include "Sqlite3TcpListener.h"
 #include "Sqlite3UdpListener.h"
 #include "Sqlite3JsonTalker.h"
+#include "VariableSqlite3.h"
 #include "Sqlite3.h"
 #include <sqlite3.h>
 #include <thread>
@@ -192,5 +193,10 @@ namespace Test
             }
         }
         printf("Going to end.\n");
+    }
+
+    void test_variable()
+    {
+
     }
 }

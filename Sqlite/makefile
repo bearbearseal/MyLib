@@ -3,6 +3,7 @@ OBJS = $(OFOLDER)main.o $(OFOLDER)Sqlite3.o
 OBJS += $(OFOLDER)Sqlite3JsonTalker.o
 OBJS += $(OFOLDER)Sqlite3TcpListener.o $(OFOLDER)TcpListener.o $(OFOLDER)TcpSocket.o
 OBJS += $(OFOLDER)Sqlite3UdpListener.o $(OFOLDER)UdpListener.o $(OFOLDER)UdpSocket.o
+OBJS += $(OFOLDER)Variable.o $(OFOLDER)Value.o $(OFOLDER)VariableSqlite3.o
 CC = g++ -std=c++17
 CFLAGS = -Wall -c
 LFLAGS = -Wall
@@ -38,6 +39,15 @@ $(OFOLDER)UdpListener.o: ../UdpSocket/UdpListener.h ../UdpSocket/UdpListener.cpp
 
 $(OFOLDER)UdpSocket.o: ../UdpSocket/UdpSocket.h ../UdpSocket/UdpSocket.cpp
 	$(CC) $(CFLAGS) ../UdpSocket/UdpSocket.cpp -o $@
+
+$(OFOLDER)VariableSqlite3.o: VariableSqlite3.h VariableSqlite3.cpp
+	$(CC) $(CFLAGS) VariableSqlite3.cpp -o $@
+
+$(OFOLDER)Variable.o: ../Basic/Variable.h ../Basic/Variable.cpp
+	$(CC) $(CFLAGS) ../Basic/Variable.cpp -o $@
+
+$(OFOLDER)Value.o: ../Basic/Value.h ../Basic/Value.cpp
+	$(CC) $(CFLAGS) ../Basic/Value.cpp -o $@
 
 clean:
 	rm -f $(binaries) $(OFOLDER)*.o

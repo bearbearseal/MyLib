@@ -9,21 +9,19 @@ private:
     class Sqlite3Variable : public Variable
     {
     public:
-        Sqlite3Variable(std::shared_ptr<Sqlite3> _parent, int64_t rowid, const std::string& column);
+        Sqlite3Variable(std::unique_ptr<Sqlite3::PreparedStatement<std::string>>& preparedStatement);
         ~Sqlite3Variable();
         bool write_value(const Value& newValue);
     private:
-        std::weak_ptr<Sqlite3> parent;
-        int64_t rowid;
-        const std::string column;
+        std::unique_ptr<Sqlite3::PreparedStatement<std::string>> preparedStatement;
     };
 public:
     VariableSqlite3(const std::string& databasename);
     ~VariableSqlite3();
-    std::shared_ptr<Sqlite3Variable> get_variable(int64_t rowid, const std::string& column);
+    std::shared_ptr<Sqlite3Variable> get_variable(const std::string& tablename, int64_t rowid, const std::string& column);
 
 private:
-    std::shared_ptr<Sqlite3> theSqlite3;
+    std::unique_ptr<Sqlite3> theSqlite3;
 };
 
 #endif

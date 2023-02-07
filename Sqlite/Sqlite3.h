@@ -101,7 +101,24 @@ public:
             lines.clear();
             return {};
         }
-        std::optional<int64_t> quick_update(T first, Args... rest)
+        bool quick_update(T first, Args... rest)
+        {
+            std::lock_guard<std::mutex> lock(connection->theMutex);
+            int rc = sqlite3_exec(connection->db, "BEGIN TRANSACTION", NULL, NULL, NULL);
+            auto aLine = create_my_tuple(first, rest...);
+            commit_line(aLine);
+            rc = sqlite3_step(stmt);
+            if(rc != SQLITE_DONE)
+                return false;
+            rc = sqlite3_reset(stmt);
+            if(rc != SQLITE_OK)
+                return false;
+            rc = sqlite3_exec(connection->db, "COMMIT TRANSACTION", NULL, NULL, NULL);
+            if (rc != SQLITE_OK)
+                return false;
+            return true;
+        }
+        std::optional<int64_t> quick_insert(T first, Args... rest)
         {
             std::lock_guard<std::mutex> lock(connection->theMutex);
             int rc = sqlite3_exec(connection->db, "BEGIN TRANSACTION", NULL, NULL, NULL);
