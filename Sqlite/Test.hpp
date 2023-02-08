@@ -197,6 +197,8 @@ namespace Test
 
     void test_variable()
     {
-
+        VariableSqlite3 variableSqlite3("/var/sqlite/PointLog.db");
+        auto aPoint = variableSqlite3.get_variable("table1", 1, "Value");
+        aPoint->write_value("9.2");
     }
 }

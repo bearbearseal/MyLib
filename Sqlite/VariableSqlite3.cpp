@@ -17,14 +17,16 @@ shared_ptr<VariableSqlite3::Sqlite3Variable> VariableSqlite3::get_variable(const
     if(theSqlite3 == nullptr)
         return nullptr;
     auto preparedStatement = theSqlite3->create_prepared_statement<string>("Update " + tablename + " SET " + column + "=? WHERE rowid=" + to_string(rowid));
+
     if(preparedStatement == nullptr)
         return nullptr;
-    return make_shared<Sqlite3Variable>(preparedStatement);
+    return make_shared<Sqlite3Variable>(0, preparedStatement);
 }
 
-VariableSqlite3::Sqlite3Variable::Sqlite3Variable(std::unique_ptr<Sqlite3::PreparedStatement<std::string>>& _preparedStatement)
+VariableSqlite3::Sqlite3Variable::Sqlite3Variable(const Value& initValue, std::unique_ptr<Sqlite3::PreparedStatement<std::string>>& _preparedStatement)
 {
     preparedStatement = move(_preparedStatement);
+    this->update_value_to_cache(initValue);
 }
 
 VariableSqlite3::Sqlite3Variable::~Sqlite3Variable()

@@ -9,7 +9,7 @@ private:
     class Sqlite3Variable : public Variable
     {
     public:
-        Sqlite3Variable(std::unique_ptr<Sqlite3::PreparedStatement<std::string>>& preparedStatement);
+        Sqlite3Variable(const Value& initValue, std::unique_ptr<Sqlite3::PreparedStatement<std::string>>& preparedStatement);
         ~Sqlite3Variable();
         bool write_value(const Value& newValue);
     private:
