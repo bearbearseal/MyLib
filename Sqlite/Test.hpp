@@ -22,9 +22,9 @@ namespace Test
                 for (size_t j = 0; j < result->get_column_count(); ++j)
                 {
                     auto data = result->get_string(i, j);
-                    if (data.first)
+                    if (data.has_value())
                     {
-                        printf("%s |", data.second.c_str());
+                        printf("%s |", data.value().c_str());
                     }
                     else
                     {
@@ -199,6 +199,8 @@ namespace Test
     {
         VariableSqlite3 variableSqlite3("/var/sqlite/PointLog.db");
         auto aPoint = variableSqlite3.get_variable("table1", 1, "Value");
-        aPoint->write_value("9.2");
+        printf("Now:%s\n", aPoint->read_value().to_string().c_str());
+        aPoint->write_value("2.3");
+        printf("Now:%s\n", aPoint->read_value().to_string().c_str());
     }
 }

@@ -46,20 +46,20 @@ public:
     class ResultSet
     {
     public:
-        ResultSet(std::vector<std::vector<std::pair<bool, std::string>>> &data, std::unordered_map<std::string, size_t> &names, std::vector<std::string> &columnNames);
+        ResultSet(std::vector<std::vector<std::optional<std::string>>> &data, std::unordered_map<std::string, size_t> &names, std::vector<std::string> &columnNames);
         ~ResultSet();
-        std::pair<bool, const std::string &> get_string(size_t row, size_t column) const;
-        std::pair<bool, const std::string &> get_string(size_t row, const std::string &column) const;
-        std::pair<bool, int64_t> get_integer(size_t row, size_t column) const;
-        std::pair<bool, int64_t> get_integer(size_t row, const std::string &column) const;
-        std::pair<bool, double> get_float(size_t row, size_t column) const;
-        std::pair<bool, double> get_float(size_t row, const std::string &column) const;
+        const std::optional<std::string>& get_string(size_t row, size_t column) const;
+        const std::optional<std::string>& get_string(size_t row, const std::string &column) const;
+        std::optional<int64_t> get_integer(size_t row, size_t column) const;
+        std::optional<int64_t> get_integer(size_t row, const std::string &column) const;
+        std::optional<double> get_float(size_t row, size_t column) const;
+        std::optional<double> get_float(size_t row, const std::string &column) const;
         inline size_t get_row_count() const { return data.size(); }
         inline size_t get_column_count() const { return names.size(); }
         const std::string &get_column_name(size_t index) const;
 
     private:
-        std::vector<std::vector<std::pair<bool, std::string>>> data;
+        std::vector<std::vector<std::optional<std::string>>> data;
         std::unordered_map<std::string, size_t> names;
         std::vector<std::string> columnNames;
     };
@@ -167,7 +167,6 @@ public:
         std::vector<std::tuple<T, Args...>> lines;
     };
 
-private:
 public:
     ~Sqlite3();
     std::unique_ptr<ResultSet> execute_query(const std::string &query, ...) const;

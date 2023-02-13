@@ -24,7 +24,7 @@ nlohmann::json to_json(std::unique_ptr<Sqlite3::ResultSet>& resultSet) {
         nlohmann::json row;
         //row.array();
         for(size_t j=0; j<resultSet->get_column_count(); ++j) {
-            row.push_back(resultSet->get_string(i, j).second);
+            row.push_back(resultSet->get_string(i, j).value());
         }
         columnData.push_back(row);
     }

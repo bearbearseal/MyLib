@@ -19,6 +19,8 @@ public:
     VariableSqlite3(const std::string& databasename);
     ~VariableSqlite3();
     std::shared_ptr<Sqlite3Variable> get_variable(const std::string& tablename, int64_t rowid, const std::string& column);
+    std::shared_ptr<Sqlite3Variable> get_variable_integer(const std::string& tablename, int64_t rowid, const std::string& column);
+    std::shared_ptr<Sqlite3Variable> get_variable_float(const std::string& tablename, int64_t rowid, const std::string& column);
 
 private:
     std::unique_ptr<Sqlite3> theSqlite3;

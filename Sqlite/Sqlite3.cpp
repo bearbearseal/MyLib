@@ -30,7 +30,7 @@ Sqlite3::~Sqlite3() {}
 
 int select_call_back(void *parameter, int argc, char **argv, char **azColName)
 {
-    tuple<vector<vector<pair<bool, string>>>, unordered_map<string, size_t>, vector<string>> *retVal = (tuple<vector<vector<pair<bool, string>>>, unordered_map<string, size_t>, vector<string>> *)parameter;
+    tuple<vector<vector<optional<string>>>, unordered_map<string, size_t>, vector<string>> *retVal = (tuple<vector<vector<optional<string>>>, unordered_map<string, size_t>, vector<string>> *)parameter;
     unordered_map<string, size_t> &name2Index = get<1>(*retVal);
     vector<string> &columnName = get<2>(*retVal);
     if (!name2Index.size())
@@ -41,15 +41,15 @@ int select_call_back(void *parameter, int argc, char **argv, char **azColName)
             columnName.push_back(azColName[i]);
         }
     }
-    vector<pair<bool, string>> row;
+    vector<optional<string>> row;
     for (int i = 0; i < argc; ++i)
     {
         if (argv[i] != NULL)
-            row.push_back({true, argv[i]});
+            row.push_back({argv[i]});
         else
-            row.push_back({false, string()});
+            row.push_back({});
     }
-    vector<vector<pair<bool, string>>> &rowData = get<0>(*retVal);
+    vector<vector<optional<string>>> &rowData = get<0>(*retVal);
     rowData.push_back(move(row));
     return 0;
 }
@@ -61,7 +61,7 @@ std::unique_ptr<Sqlite3::ResultSet> Sqlite3::execute_query(const string &query, 
     va_start(parameters, query);
     vsprintf(tempBuffer, query.c_str(), parameters);
     va_end(parameters);
-    tuple<vector<vector<pair<bool, string>>>, unordered_map<string, size_t>, vector<string>> retVal;
+    tuple<vector<vector<optional<string>>>, unordered_map<string, size_t>, vector<string>> retVal;
     char *zErrMessage = nullptr;
     {
         std::lock_guard<mutex> lock(connection->theMutex);
@@ -163,11 +163,10 @@ bool do_sql_bind(sqlite3_stmt *stmt, variant<int64_t, double, string> parameter,
     {
         return true;
     }
-    printf("Binding failed.\n");
     return false;
 }
 
-Sqlite3::ResultSet::ResultSet(vector<vector<pair<bool, std::string>>> &_data, unordered_map<string, size_t> &_names, vector<string> &_columnNames)
+Sqlite3::ResultSet::ResultSet(vector<vector<optional<std::string>>> &_data, unordered_map<string, size_t> &_names, vector<string> &_columnNames)
 {
     data = move(_data);
     names = move(_names);
@@ -185,67 +184,67 @@ const string &Sqlite3::ResultSet::get_column_name(size_t index) const
     return columnNames[index];
 }
 
-pair<bool, const string &> Sqlite3::ResultSet::get_string(size_t row, size_t column) const
+const optional<string>& Sqlite3::ResultSet::get_string(size_t row, size_t column) const
 {
     if (row > data.size())
         throw InvalidRow;
     if (column > names.size())
         throw InvalidColumn;
-    return {data[row][column].first, data[row][column].second};
+    return data[row][column];
 }
 
-pair<bool, const string &> Sqlite3::ResultSet::get_string(size_t row, const std::string &column) const
+const optional<string>& Sqlite3::ResultSet::get_string(size_t row, const std::string &column) const
 {
     if (row > data.size())
         throw InvalidRow;
     auto i = names.find(column);
     if (i == names.end())
         throw InvalidColumn;
-    return {data[row][i->second].first, data[row][i->second].second};
+    return data[row][i->second];
 }
 
-pair<bool, int64_t> Sqlite3::ResultSet::get_integer(size_t row, size_t column) const
+optional<int64_t> Sqlite3::ResultSet::get_integer(size_t row, size_t column) const
 {
     if (row > data.size())
         throw InvalidRow;
     if (column > names.size())
         throw InvalidColumn;
-    if (!data[row][column].second.size())
-        return {false, 0};
-    return {data[row][column].first, stoll(data[row][column].second)};
+    if (data[row][column].has_value())
+        return stol(data[row][column].value());
+    return {};
 }
 
-pair<bool, int64_t> Sqlite3::ResultSet::get_integer(size_t row, const std::string &column) const
+optional<int64_t> Sqlite3::ResultSet::get_integer(size_t row, const std::string &column) const
 {
     if (row > data.size())
         throw InvalidRow;
     auto i = names.find(column);
     if (i == names.end())
         throw InvalidColumn;
-    if (!data[row][i->second].second.size())
-        return {false, 0};
-    return {data[row][i->second].first, stoll(data[row][i->second].second)};
+    if (!data[row][i->second].has_value())
+        return stol(data[row][i->second].value());
+    return {};
 }
 
-pair<bool, double> Sqlite3::ResultSet::get_float(size_t row, size_t column) const
+optional<double> Sqlite3::ResultSet::get_float(size_t row, size_t column) const
 {
     if (row > data.size())
         throw InvalidRow;
     if (column > names.size())
         throw InvalidColumn;
-    if (!data[row][column].second.size())
-        return {false, std::numeric_limits<double>::quiet_NaN()};
-    return {data[row][column].first, stod(data[row][column].second)};
+    if (!data[row][column].has_value())
+        return {stod(data[row][column].value())};
+    return {};
 }
 
-pair<bool, double> Sqlite3::ResultSet::get_float(size_t row, const std::string &column) const
+optional<double> Sqlite3::ResultSet::get_float(size_t row, const std::string &column) const
 {
     if (row > data.size())
         throw InvalidRow;
     auto i = names.find(column);
     if (i == names.end())
         throw InvalidColumn;
-    if (!data[row][i->second].second.size())
-        return {false, std::numeric_limits<double>::quiet_NaN()};
-    return {data[row][i->second].first, stod(data[row][i->second].second)};
+    if (!data[row][i->second].has_value())
+        return {stod(data[row][i->second].value())};
+    return {};
 }
