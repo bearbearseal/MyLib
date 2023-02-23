@@ -1,4 +1,3 @@
-#pragma once
 #ifndef _TREEBROWSER_H_
 #define _TREEBROWSER_H_
 #include "VariableTree.h"
@@ -8,9 +7,14 @@
 #include <functional>
 #include <memory>
 #include <unordered_set>
+#include <variant>
 #include <unordered_map>
 #include "../../OtherLib/nlohmann/json.hpp"
 
+/*
+ * Takes a VariableTree instance as the tree to browse.
+ * Takes a Listener to receive the changes happening in VariableTree
+ */
 class TreeBrowser {
 	friend class BranchListener;
 	friend class ValueListener;
@@ -44,7 +48,8 @@ public:
 	class VariableCreator {
 	public:
 		virtual ~VariableCreator() {}
-		virtual std::shared_ptr<Variable> create_variable() = 0;
+		// Return the variable or error message
+		virtual std::variant<std::shared_ptr<Variable>, std::string> create_variable(std::unordered_map<std::string, Value>& parameters) = 0;
 	};
 	class Listener {
 	public:
@@ -55,6 +60,7 @@ public:
 	virtual ~TreeBrowser();
 
 	std::string process_command(const std::string& input);
+	bool add_variable_creator(const std::string& command, std::weak_ptr<VariableCreator> variableCreator);
 
 private:
 	void forward_to_listener(const std::string& message);
@@ -99,6 +105,7 @@ private:
 	std::string process_command_create_branch(const nlohmann::json& jData);
 	std::string process_command_create_leaf(const nlohmann::json& jData);
 	std::string process_command_delete_child(const nlohmann::json& jData);
+	std::variant<std::shared_ptr<Variable>, std::string> process_create_leaf(const std::string& type, const nlohmann::json& jData);
 
 private:
 	std::weak_ptr<VariableTree> treeRoot;
@@ -119,6 +126,7 @@ private:
 		std::unordered_map<void*, std::shared_ptr<ValueListener>> data;
 	}valueListeners;
 
+	std::unordered_map<std::string, std::weak_ptr<VariableCreator>> command2CreatorMap;
 	std::weak_ptr<Listener> myListener;
 	std::shared_ptr<MyShadow> myShadow;
 };

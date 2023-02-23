@@ -107,6 +107,15 @@ string TreeBrowser::process_command(const string& input) {
 	return theReply.dump() + '\n';
 }
 
+bool TreeBrowser::add_variable_creator(const std::string& command, std::weak_ptr<VariableCreator> variableCreator) {
+	if(command2CreatorMap.count(command)) {
+		return false;
+	}
+	command2CreatorMap[command] = variableCreator;
+	return true;
+}
+
+
 string TreeBrowser::process_command_back_to_top() {
 	nlohmann::json retVal;
 	cursor = treeRoot;
@@ -531,6 +540,45 @@ string TreeBrowser::process_command_write_value(const nlohmann::json& jData) {
 	return retVal.dump() + '\n';
 }
 
+variant<shared_ptr<Variable>, string> TreeBrowser::process_create_leaf(const std::string& type, const nlohmann::json& jData)
+{
+	nlohmann::json errorDescription;
+	auto creator = command2CreatorMap.find(type);
+	if(creator == command2CreatorMap.end())
+	{
+		errorDescription["Status"] = "Bad";
+		errorDescription["Message"] = "Leaf type unknown";
+		return { errorDescription.dump() + '\n' };
+	}
+	if(jData.is_object())
+	{
+		unordered_map<string, Value> parameters;
+		for(nlohmann::json::const_iterator i = jData.begin(); i != jData.end(); ++i)
+		{
+			if(i->is_boolean())
+				parameters[i.key()] = i.value().get<bool>();
+			else if(i->is_number_float())
+				parameters[i.key()] = i.value().get<double>();
+			else if(i->is_number_integer())
+				parameters[i.key()] = i.value().get<uint64_t>();
+			else if(i->is_string())
+				parameters[i.key()] = i.value().get<string>();
+		}
+		auto shared = creator->second.lock();
+		if(shared != nullptr)
+		{
+			return shared->create_variable(parameters);
+		}
+		errorDescription["Status"] = "Bad";
+		errorDescription["Message"] = "Creator type expired";
+		return { errorDescription.dump() + '\n' };
+	}
+	errorDescription["Status"] = "Bad";
+	errorDescription["Message"] = "Invalid create data";
+	return { errorDescription.dump() + '\n' };
+}
+
+
 std::string TreeBrowser::process_command_create_branch(const nlohmann::json& jData) {
 	nlohmann::json retVal;
 	auto shared = cursor.lock();
@@ -589,13 +637,6 @@ std::string TreeBrowser::process_command_create_leaf(const nlohmann::json& jData
 		retVal["Message"] = "Branch not found";
 		return retVal.dump() + '\n';
 	}
-	/*
-	if (!target->isLeaf) {
-		retVal["Status"] = "Bad";
-		retVal["Message"] = "Target is a leaf";
-		return retVal.dump() + '\n';
-	}
-	*/
 	if (!jData.contains("NewId")) {
 		retVal["Status"] = "Bad";
 		retVal["Message"] = "CreateLeaf needs NewId";
@@ -609,13 +650,40 @@ std::string TreeBrowser::process_command_create_leaf(const nlohmann::json& jData
 	else if (newId.is_string()) {
 		key = newId.get<string>();
 	}
+	shared_ptr<VariableTree> newLeaf;
+	if(jData.contains("Type") && jData["Type"].is_string()) {
+		if(!jData.contains("Data"))
+		{
+			auto result = this->process_create_leaf(jData["Type"].get<string>(), jData["Data"]);
+			if(result.index() == 0)
+			{
+				// Shared_ptr<Variable>
+				auto newLeaf = target->create_leaf(key, get<0>(result));
+				if (newLeaf == nullptr) {
+					retVal["Status"] = "Bad";
+					retVal["Message"] = "Failed during leaf creation";
+				}
+				else
+					retVal["Status"] = "Good";
+			}
+			else
+			{
+				retVal["Status"] = "Bad";
+				retVal["Message"] = get<1>(result);
+			}
+		}
+		else{
+			retVal["Status"] = "Bad";
+			retVal["Message"] = "No data provided for the leaf type";
+		}
+	}
 	auto result = target->create_leaf(key, make_shared<RamVariable>());
 	if (result == nullptr) {
 		retVal["Status"] = "Bad";
 		retVal["Message"] = "Failed during creation";
-		return retVal.dump() + '\n';
 	}
-	retVal["Status"] = "Good";
+	else
+		retVal["Status"] = "Good";
 	return retVal.dump() + '\n';
 }
 
