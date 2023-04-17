@@ -18,7 +18,7 @@ private:
 		Shadow(TcpListener& _master) : master(_master) {}
 		virtual ~Shadow() {}
 
-		void catch_message(std::string& data, size_t handle) { master.catch_message(data, handle); }
+		void catch_message(const std::string& data, size_t handle) { master.catch_message(data, handle); }
 		void catch_connect_event(size_t handle) { master.catch_connect_event(handle); }
 		void catch_disconnect_event(size_t handle) { master.catch_disconnect_event(handle); }
 		void write_message(size_t handle, const std::string& message) { master.write_message(handle, message); }
@@ -36,7 +36,7 @@ public:
 	void stop();
 
 protected:
-	virtual void catch_message(std::string& data, size_t handle);
+	virtual void catch_message(const std::string& data, size_t handle);
 	virtual void catch_connect_event(size_t handle);
 	virtual void catch_disconnect_event(size_t handle);
 	void broadcast(const std::string& data);

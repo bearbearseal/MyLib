@@ -4,10 +4,22 @@
 #include <thread>
 #include <chrono>
 
+using namespace std;
+
+class DerivedTcpListener : public TcpListener{
+public:
+    DerivedTcpListener(uint16_t port) : TcpListener(port) {}
+    void catch_message(const std::string& message, size_t handle) {
+        string reply = "U sent: ";
+        reply += message;
+        write_message(handle, reply);
+    }
+};
+
 namespace Test_Listener {
 
     void run() {
-        TcpListener tcpListener(56789);
+        DerivedTcpListener tcpListener(56789);
         tcpListener.start();
 
         while (1) {

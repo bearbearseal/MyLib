@@ -29,7 +29,7 @@ void TcpListener::stop() {
 	theProcess->join();
 }
 
-void TcpListener::catch_message(std::string& data, size_t handle) {
+void TcpListener::catch_message(const std::string& data, size_t handle) {
 	string reply = "Got your message: ";
 	reply += data;
 	write_message(handle, reply);

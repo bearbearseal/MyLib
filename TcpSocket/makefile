@@ -9,13 +9,13 @@ binaries = theMain.out
 main : $(OBJS)
 	$(CC) $(LFLAGS) $(OBJS) $(LIBS) -o $(binaries)
 
-main.o : main.cpp Test_Socket.hpp
+main.o : main.cpp Test_Socket.hpp Test_Listener.hpp
 	$(CC) $(CFLAGS) main.cpp
 
 TcpSocket.o : TcpSocket.h TcpSocket.cpp
 	$(CC) $(CFLAGS) TcpSocket.cpp
 
-TcpListener.o : TcpListener.h TcpListener.cpp TcpSocket.h
+TcpListener.o : TcpListener.h TcpListener.cpp
 	$(CC) $(CFLAGS) TcpListener.cpp
 
 clean:
