@@ -4,6 +4,13 @@
 
 using namespace std;
 
+/* 
+ * Server socket process
+ * This thread starts after 200ms delay
+ * It waits 300ms for message.
+ * If message present, print the message and source
+ * Reply in string the type of number that came in.
+ */
 void thread_process_1(ServerClientItc<int, string>* itc)
 {
     auto serverSocket = itc->get_server_socket();
@@ -23,13 +30,11 @@ void thread_process_1(ServerClientItc<int, string>* itc)
             ms = chrono::duration_cast<chrono::milliseconds >(chrono::system_clock::now().time_since_epoch());
             printf("Server socket send message at %zu\n", ms.count());
             if(messagePair.value().message > 0)
-            {
                 serverSocket->send_message(messagePair.value().sourceId, "Positive value.\n");
-            }
+            else if(messagePair.value().message == 0)
+                serverSocket->send_message(messagePair.value().sourceId, "Zero value.\n");
             else
-            {
                 serverSocket->send_message(messagePair.value().sourceId, "Negative value.\n");
-            }
         }
         else
         {
@@ -38,6 +43,12 @@ void thread_process_1(ServerClientItc<int, string>* itc)
     }
 }
 
+/*
+ * Client socket process, sends message to server.
+ * Run every 2 seconds.
+ * Sends integer to server then wait till server reply.
+ * Print server reply.
+ */
 void thread_process_2(ServerClientItc<int, string>* itc)
 {
     size_t anInt = 10;
@@ -47,24 +58,26 @@ void thread_process_2(ServerClientItc<int, string>* itc)
         ++anInt;
         this_thread::sleep_for(2s);
         chrono::milliseconds ms = chrono::duration_cast<chrono::milliseconds >(chrono::system_clock::now().time_since_epoch());
-        printf("Client socket 1 send message at %zu.\n", ms.count());
+        printf("Client A send message at %zu.\n", ms.count());
         clientSocket->send_message(anInt);
-        printf("Client socket 1 wait message.\n");
+        printf("Client A wait message.\n");
         clientSocket->wait_message();
         ms = chrono::duration_cast<chrono::milliseconds >(chrono::system_clock::now().time_since_epoch());
-        printf("Client socket 1 check message at %zu, got message = %s.\n", ms.count(), clientSocket->has_message() ? "yes" : "no");
+        printf("Client A check message at %zu, got message = %s.\n", ms.count(), clientSocket->has_message() ? "yes" : "no");
         auto message = clientSocket->get_message();
         if(message.has_value())
-        {
-            printf("Client socket 1 message: %s\n", message.value().c_str());
-        }
+            printf("Client A message: %s\n", message.value().c_str());
         else
-        {
-            printf("Client socket 1 time out, got message = %s.\n", clientSocket->has_message() ? "yes" : "no");
-        }
+            printf("Client A time out, got message = %s.\n", clientSocket->has_message() ? "yes" : "no");
     }
 }
 
+/*
+ * Client socket process, sends message to server.
+ * Run every 3 seconds.
+ * Sends integer to server then wait till server reply.
+ * Print server reply.
+ */
 void thread_process_3(ServerClientItc<int, string>* itc)
 {
     int anInt = -10;
@@ -74,20 +87,20 @@ void thread_process_3(ServerClientItc<int, string>* itc)
         --anInt;
         this_thread::sleep_for(3s);
         chrono::milliseconds ms = chrono::duration_cast<chrono::milliseconds >(chrono::system_clock::now().time_since_epoch());
-        printf("Client socket 2 send message at %zu.\n", ms.count());
+        printf("Client B send message at %zu.\n", ms.count());
         clientSocket->send_message(anInt);
-        printf("Client socket 2 wait message.\n");
+        printf("Client B wait message.\n");
         clientSocket->wait_message();
         ms = chrono::duration_cast<chrono::milliseconds >(chrono::system_clock::now().time_since_epoch());
-        printf("Client socket 2 check message at %zu, got message = %s.\n", ms.count(), clientSocket->has_message() ? "yes" : "no");
+        printf("Client B check message at %zu, got message = %s.\n", ms.count(), clientSocket->has_message() ? "yes" : "no");
         auto message = clientSocket->get_message();
         if(message.has_value())
         {
-            printf("Client socket 2 message: %s\n", message.value().c_str());
+            printf("Client B message: %s\n", message.value().c_str());
         }
         else
         {
-            printf("Client socket 2 time out, got message = %s.\n", clientSocket->has_message() ? "yes" : "no");
+            printf("Client B time out, got message = %s.\n", clientSocket->has_message() ? "yes" : "no");
         }
     }
 }
