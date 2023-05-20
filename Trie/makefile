@@ -4,7 +4,7 @@ CC = g++
 CXXFLAGS = -Wall -c -std=c++17
 LFLAGS = -Wall -std=c++17
 LIBS = -lpthread
-binary = theMain
+binary = theMain.bin
 
 main: $(obj)
 	$(CC) $(LFLAGS) $^ $(LIBS) -o $(binary)

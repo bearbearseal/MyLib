@@ -53,7 +53,15 @@ Trie::~Trie()
 
 bool Trie::search(const string &word, size_t distance)
 {
-    return true;
+    if(word.empty())
+    {
+        return false;
+    }
+    string_view toRemove = word;
+    size_t index = convert_character_to_index(*toRemove.begin());
+    //printf("Searching %c\n", *toRemove.begin());
+    toRemove.remove_prefix(1);
+    return children[index].search_node(toRemove, distance);
 }
 
 void Trie::insert(const string &word)
@@ -83,15 +91,18 @@ void Trie::Node::insert_node(string_view &toAdd)
     {
         children.resize(AsciiAlphabetCount + 3);
     }
-    size_t theIndex = convert_character_to_index(*toAdd.begin());
-    toAdd.remove_prefix(1);
     if (toAdd.empty())
     {
         type = Type::Word;
     }
     else
     {
-        type = Type::Intermediate;
+        if(type != Type::Word)
+        {
+            type = Type::Intermediate;
+        }
+        size_t theIndex = convert_character_to_index(*toAdd.begin());
+        toAdd.remove_prefix(1);
         children[theIndex].insert_node(toAdd);
     }
 }
@@ -112,13 +123,31 @@ bool Trie::Node::remove_node(string_view &toRemove)
 
 bool Trie::Node::search_node(string_view &toRemove, size_t /*distance*/)
 {
-    //if this is an Empty Type
-    //  return false
     //if toRemove is empty
     //  if this is a Word Type
     //      return true
     //  else
     //      return false
     //return search_node of ++toRemove
-    return true;
+    if(type == Type::Empty)
+    {
+        printf("This node is empty.\n");
+        return false;
+    }
+    if(toRemove.empty())
+    {
+        if(type == Type::Word)
+        {
+            return true;
+        }
+        else
+        {
+            printf("This node is intermediate.\n");
+            return false;
+        }
+    }
+    size_t index = convert_character_to_index(*toRemove.begin());
+    //printf("Searching %c\n", *toRemove.begin());
+    toRemove.remove_prefix(1);
+    return children[index].search_node(toRemove, 0);
 }
