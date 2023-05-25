@@ -16,6 +16,7 @@ public:
 
     bool search(const std::string &word, size_t index = 0);
     void insert(const std::string &word) { insert(word, word, 0); }
+    void insert(std::string_view &word, const std::string_view &value);
     void insert(const std::string &word, const std::string &value, size_t index = 0);
     std::pair<size_t, std::unordered_set<const std::string *>> find_string(const std::string &word, size_t distance, size_t index = 0);
 

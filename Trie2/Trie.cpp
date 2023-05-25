@@ -15,6 +15,26 @@ bool Trie::search(const std::string &word, size_t index)
     return true;
 }
 
+void Trie::insert(string_view &word, const string_view &newValue)
+{
+    if(word.empty())
+    {
+        value = newValue;
+    }
+    else
+    {
+        auto theChild = children.find(*word.begin());
+        if (theChild == children.end())
+        {
+            //printf("Add node of %c as child\n", word.at(index));
+            theChild = children.emplace(*word.begin(), new Trie()).first;
+        }
+        //printf("Insert child add %s\n", &word[index+1]);
+        word.remove_prefix(1);
+        theChild->second->insert(word, newValue);
+    }
+}
+
 void Trie::insert(const std::string &word, const std::string& theValue, size_t index)
 {
     if (index >= word.size())
@@ -65,7 +85,6 @@ pair<size_t, unordered_set<const string*>> Trie::find_string(const string &word,
     {
         if (!value.empty())
         {
-            //printf("0\n");
             return {distance, {&value}};
         }
         else if (distance == 0)
@@ -86,12 +105,10 @@ pair<size_t, unordered_set<const string*>> Trie::find_string(const string &word,
     }
     pair<size_t, unordered_set<const string*>> result;
     pair<size_t, unordered_set<const string*>> singleResult;
-    //printf("Finding node %c\n", word.at(index));
     auto theChild = children.find(word.at(index));
     if (theChild != children.end())
     {
-        //printf("Found.\n");
-        singleResult = theChild->second->find_string(word, distance, ++index);
+        singleResult = theChild->second->find_string(word, distance, index+1);
         combine_best_to_result1(result, singleResult);
     }
     if (distance > 0)

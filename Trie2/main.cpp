@@ -1,68 +1,66 @@
 #include "Trie.h"
+#include <fstream>
+#include <iostream>
 
 using namespace std;
 
-int main()
+const pair<string_view, string_view>& break_into_pair(const std::string& input)
+{
+    static pair<string_view, string_view> retVal;
+    retVal.first = input;
+    size_t pos = input.find_first_of("=>");
+    if(pos == string::npos)
+    {
+        retVal.second = input;
+    }
+    else
+    {
+        retVal.second = retVal.first.substr(pos+2);
+        retVal.first = retVal.first.substr(0, pos);
+    }
+    return retVal;
+}
+
+int main(int argc, char* argv[])
 {
     Trie aTrie;
-    aTrie.insert("Kuala Lumpur");
-    aTrie.insert("Kuala Selangor");
-    aTrie.insert("Kuala Kurau");
-    aTrie.insert("Kuala Ku");
-    aTrie.insert("Kuala Lipis");
-    aTrie.insert("Kuala Lipis mu");
-    aTrie.insert("Pantai Remis");
-    aTrie.insert("Pantai Redang");
-    aTrie.insert("Kluang");
-    aTrie.insert("Klang");
-    aTrie.insert("Qooala Loompoor");
-
+    fstream theFile;
+    string filename = "SelangorDistricts.txt";
+    theFile.open(filename, ios::in);
+    while(!theFile.is_open())
     {
-        auto result = aTrie.find_string("Kuala Se langor", 1);
-        printf("%zu: \n", result.first);
-        for (auto i = result.second.begin(); i != result.second.end(); ++i)
-        {
-            printf("\t%s\n", (*i)->c_str());
-        }
+        cout<<"Dictionary file name: "<<endl;
+        cin>>filename;
+        theFile.open(filename, ios::in);
     }
+    string aLine;
+    while(getline(theFile, aLine))
     {
-        auto result = aTrie.find_string("Kuala K", 1);
-        printf("%zu: \n", result.first);
-        for (auto i = result.second.begin(); i != result.second.end(); ++i)
-        {
-            printf("\t%s\n", (*i)->c_str());
-        }
+        auto thePair = break_into_pair(aLine);
+        cout<<thePair.first<<"=>"<<thePair.second<<endl;
+        aTrie.insert(thePair.first, thePair.second);
     }
+    string numberLine;
+    int distance;
+    while(1)
     {
-        auto result = aTrie.find_string("Luala Kumpur", 2);
-        printf("%zu: \n", result.first);
+        do {
+            cout<<"Input search string: "<<endl;
+            getline(cin,aLine);
+        }while(aLine.empty());
+        do {
+            cout<<"Distance: "<<endl;
+            getline(cin, numberLine);
+            distance = atoi(numberLine.c_str());
+        }while(distance<0 || distance>5);
+        cout<<"Searching "<<aLine<<" Distance "<<distance<<endl;
+        auto result = aTrie.find_string(aLine, distance);
+        printf("Distance %zu: \n", distance - result.first);
         for (auto i = result.second.begin(); i != result.second.end(); ++i)
         {
             printf("\t%s\n", (*i)->c_str());
         }
-    }
-    {
-        auto result = aTrie.find_string("PantaiR emis", 1);
-        printf("%zu: \n", result.first);
-        for (auto i = result.second.begin(); i != result.second.end(); ++i)
-        {
-            printf("\t%s\n", (*i)->c_str());
-        }
-    }
-    {
-        auto result = aTrie.find_string("Clung", 2);
-        printf("%zu: \n", result.first);
-        for (auto i = result.second.begin(); i != result.second.end(); ++i)
-        {
-            printf("\t%s\n", (*i)->c_str());
-        }
-    }
-    {
-        auto result = aTrie.find_string("Quala Loompur", 3);
-        printf("%zu: \n", result.first);
-        for (auto i = result.second.begin(); i != result.second.end(); ++i)
-        {
-            printf("\t%s\n", (*i)->c_str());
-        }
+        aLine.clear();
+        numberLine.clear();
     }
 }
