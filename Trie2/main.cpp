@@ -1,6 +1,7 @@
 #include "Trie.h"
 #include <fstream>
 #include <iostream>
+#include <chrono>
 
 using namespace std;
 
@@ -54,7 +55,9 @@ int main(int argc, char* argv[])
             distance = atoi(numberLine.c_str());
         }while(distance<0 || distance>5);
         cout<<"Searching "<<aLine<<" Distance "<<distance<<endl;
+        auto startTime = chrono::steady_clock::now();
         auto result = aTrie.find_string(aLine, distance);
+        auto timePassed = chrono::steady_clock::now() - startTime;
         printf("Distance %zu: \n", distance - result.first);
         for (auto i = result.second.begin(); i != result.second.end(); ++i)
         {
@@ -62,5 +65,6 @@ int main(int argc, char* argv[])
         }
         aLine.clear();
         numberLine.clear();
+        printf("Time: %zu\n", chrono::duration_cast<chrono::microseconds>(timePassed).count());
     }
 }

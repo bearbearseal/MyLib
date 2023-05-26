@@ -110,18 +110,22 @@ pair<size_t, unordered_set<const string*>> Trie::find_string(const string &word,
     {
         singleResult = theChild->second->find_string(word, distance, index+1);
         combine_best_to_result1(result, singleResult);
+        //distance = distance - singleResult.first;
     }
     if (distance > 0)
     {
         // Find result from if next character is a wrong
         singleResult = find_string_this_character_is_wrong(word, distance, index); 
         combine_best_to_result1(result, singleResult);
+        //distance = distance - singleResult.first;
         // Find result from if this character is an xtra
         singleResult = find_string_this_character_is_xtra(word, distance, index);
         combine_best_to_result1(result, singleResult);
+        //distance = distance - singleResult.first;
         // Find result from if next character is missing
         singleResult = find_string_this_character_is_missing(word, distance, index);
         combine_best_to_result1(result, singleResult);
+        //distance = distance - singleResult.first;
         // Find result from if next and next next characters switch position
         singleResult = find_string_this_character_is_switched(word, distance, index);
         combine_best_to_result1(result, singleResult);
