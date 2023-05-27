@@ -90,7 +90,7 @@ pair<size_t, unordered_set<const string*>> Trie::find_string(const string &word,
         else if (distance == 0)
         {
             // if distance is 0 then no need to go further
-            return {distance, {}};
+            return {0, {}};
         }
         // this value is empty, it would definitely have children
         // get the closet match of each child and put them into a list
@@ -117,18 +117,29 @@ pair<size_t, unordered_set<const string*>> Trie::find_string(const string &word,
         // Find result from if next character is a wrong
         singleResult = find_string_this_character_is_wrong(word, distance, index); 
         combine_best_to_result1(result, singleResult);
-        //distance = distance - singleResult.first;
+        distance = distance - singleResult.first;
+    }
+    if (distance > 0)
+    {
         // Find result from if this character is an xtra
         singleResult = find_string_this_character_is_xtra(word, distance, index);
         combine_best_to_result1(result, singleResult);
-        //distance = distance - singleResult.first;
+        distance = distance - singleResult.first;
+    }
+    if (distance > 0)
+    {
         // Find result from if next character is missing
         singleResult = find_string_this_character_is_missing(word, distance, index);
         combine_best_to_result1(result, singleResult);
-        //distance = distance - singleResult.first;
+        distance = distance - singleResult.first;
+    }
+    if (distance > 0)
+    {
+
         // Find result from if next and next next characters switch position
         singleResult = find_string_this_character_is_switched(word, distance, index);
         combine_best_to_result1(result, singleResult);
+        distance = distance - singleResult.first;
     }
     return result;
 }
@@ -171,7 +182,7 @@ pair<size_t, unordered_set<const string*>> Trie::find_string_this_character_is_s
 {
     if (word.size() - index < 2)
     {
-        return {distance, {}};
+        return {0, {}};
     }
     auto nextChar = word[index];
     auto nexNextChar = word[index + 1];
@@ -180,12 +191,12 @@ pair<size_t, unordered_set<const string*>> Trie::find_string_this_character_is_s
     // find next node gain with previous char
     if (nextChild == children.end())
     {
-        return {distance, {}};
+        return {0, {}};
     }
     auto nextNextChild = nextChild->second->children.find(nextChar);
     if(nextNextChild == nextChild->second->children.end())
     {
-        return {distance, {}};
+        return {0, {}};
     }
     --distance;
     index+=2;

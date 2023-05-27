@@ -65,6 +65,6 @@ int main(int argc, char* argv[])
         }
         aLine.clear();
         numberLine.clear();
-        printf("Time: %zu\n", chrono::duration_cast<chrono::microseconds>(timePassed).count());
+        printf("Time: %lld\n", chrono::duration_cast<chrono::microseconds>(timePassed).count());
     }
 }
