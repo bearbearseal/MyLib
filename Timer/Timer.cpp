@@ -4,119 +4,113 @@ using namespace std;
 
 Timer::Timer()
 {
-    eventSocket = itc.create_fixed_socket(1, 2);
-    threadSocket = itc.create_fixed_socket(2, 1);
-    theProcess = make_unique<thread>(thread_process, this);
 }
 
 Timer::~Timer()
 {
-    terminate();
-    theProcess->join();
+    stop();
 }
 
-void Timer::terminate()
+Timer::EventId Timer::add_event(
+    weak_ptr<EventCatcher> listener, chrono::time_point<chrono::steady_clock> eventTime, chrono::milliseconds repeatInterval)
 {
-    Message message;
-    message.command = Command::Terminate;
-    eventSocket->send_message(message);
-}
-
-void Timer::time_changed()
-{
-    Message message;
-    message.command = Command::TimeChanged;
-    eventSocket->send_message(message);
-}
-
-void Timer::add_time_event(time_t eventTime, std::weak_ptr<Listener> listener, uint32_t token, time_t interval)
-{
-    Message message;
-    message.command = Command::AddEvent;
-    message.eventTime = eventTime;
-    message.listener = listener;
-    message.token = token;
-    message.interval = interval;
-    eventSocket->send_message(message);
-}
-
-void Timer::thread_process(Timer *me)
-{
-    while (1)
+    uint32_t eventId;
     {
-        switch (me->processState)
+        lock_guard<mutex> lock(mDataMutex);
+        if (!freeId.empty())
         {
-        case 0: //Initial State
-            me->threadSocket->wait_message();
-            me->processState = 10;
-            break;
-
-        case 10: //Read message
-        {
-            //time_t secondNow = chrono::system_clock::to_time_t(chrono::system_clock::now());
-            while (me->threadSocket->has_message())
-            {
-                auto message = me->threadSocket->get_message();
-                switch (message.message.command)
-                {
-                case Command::AddEvent:
-                    printf("Adding event at %ld\n", message.message.eventTime);
-                    me->second2ListenerListMap[message.message.eventTime].push_back({message.message.listener, message.message.interval, message.message.token});
-                    break;
-                case Command::TimeChanged:
-                    break;
-                case Command::Terminate:
-                default:
-                    return;
-                }
-            }
-            printf("No more message.\n");
-            me->processState = 20;
-            break;
+            eventId = *freeId.rbegin();
+            freeId.pop_back();
         }
-        case 20: //Wait for event
+        else
         {
-            printf("Wait for event state.\n");
-            auto firstEntry = me->second2ListenerListMap.begin();
-            if (firstEntry == me->second2ListenerListMap.end())
+            eventId = nextId;
+            ++nextId;
+        }
+        if (mEventDataMap.emplace(eventTime, EventData(listener, repeatInterval, eventId)) == mEventDataMap.begin())
+        {
+            lock_guard<mutex> lock(mCVMutex);
+            mConditionVariable.notify_one();
+        }
+    }
+    return EventId(eventId);
+}
+
+bool Timer::remove_event(EventId eventId)
+{
+    lock_guard<mutex> lock(mDataMutex);
+    for (auto it = mEventDataMap.begin(); it != mEventDataMap.end(); ++it)
+    {
+        if (it->second.myId == eventId.myId)
+        {
+            mEventDataMap.erase(it);
+            return true;
+        }
+    }
+    return false;
+}
+
+void Timer::start()
+{
+    threadProcess = new thread(process, this);
+}
+
+void Timer::stop()
+{
+    if (threadProcess != nullptr)
+    {
+        mTerminate = true;
+        threadProcess->join();
+        delete threadProcess;
+        threadProcess = nullptr;
+    }
+}
+
+void Timer::process(Timer *me)
+{
+    while (!me->mTerminate)
+    {
+        {
+            unique_lock<mutex> lock(me->mCVMutex);
+            me->mConditionVariable.wait_until(lock, me->mEventDataMap.begin()->first);
+        }
+        // Lock event vector
+        {
+            auto now = chrono::steady_clock::now();
+            lock_guard<mutex> lock(me->mDataMutex);
+            if (!me->mEventDataMap.empty())
             {
-                me->processState = 0; //wait for message
-            }
-            else
-            {
-                time_t secondNow = chrono::system_clock::to_time_t(chrono::system_clock::now());
-                time_t eventSecond = firstEntry->first;
-                if(eventSecond <= secondNow)
+                auto theOne = me->mEventDataMap.begin();
+                while (theOne->first <= now)
                 {
-                    for (size_t i = 0; i < firstEntry->second.size(); ++i)
+                    auto sharedP = theOne->second.catcher.lock();
+                    if (sharedP != nullptr)
                     {
-                        ListenerData& currentListener = firstEntry->second[i];
-                        auto shared = currentListener.listener.lock();
-                        if (shared != nullptr)
+                        // Notify listener
+                        sharedP->catch_timed_event(theOne->second.myId, theOne->first);
+                        if (theOne->second.interval != 0ms)
                         {
-                            shared->catch_time_event(eventSecond, currentListener.token);
-                            if(currentListener.interval)
-                            {
-                                //add to list again
-                                me->second2ListenerListMap[eventSecond+currentListener.interval].push_back({currentListener.listener, currentListener.interval, currentListener.token});
-                            }
+                            // Reinsert the repeating
+                            auto theNode = me->mEventDataMap.extract(theOne);
+                            me->mEventDataMap.insert({theNode.key() + theNode.mapped().interval, theNode.mapped()});
+                        }
+                        else
+                        {
+                            // Remove if not repeating
+                            me->mEventDataMap.erase(theOne);
                         }
                     }
-                    me->second2ListenerListMap.erase(firstEntry);
-                }
-                else
-                {
-                    //printf("Going to wait %lu seconds for event.\n", eventSecond - secondNow);
-                    //printf("Event time %lu now %lu\n", eventSecond, secondNow);
-                    me->threadSocket->wait_message(chrono::seconds(eventSecond - secondNow));
-                    if(me->threadSocket->has_message())
+                    else
                     {
-                        me->processState = 10;   //Get message
+                        // The catcher is gone
+                        me->mEventDataMap.erase(theOne);
                     }
+                    if (!me->mEventDataMap.empty())
+                        theOne = me->mEventDataMap.begin();
+                    else
+                        break;
                 }
             }
-            break;
-        }
         }
     }
 }

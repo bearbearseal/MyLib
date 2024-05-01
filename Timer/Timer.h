@@ -1,66 +1,56 @@
-/*
-This class time is based on system clock.
-Add an event (with listener and token) to timer and tell it the second it should be invoked
-The event would be invoked when time is >= the intended time and be removed.
-*/
-
-#ifndef _Timer_H_
-#define _Timer_H_
+/**************************************************
+ * TimedEvent, based on steady_clock
+ **************************************************/
+#include <mutex>
+#include <condition_variable>
+#include <chrono>
 #include <memory>
 #include <map>
-#include <vector>
 #include <thread>
-#include "../../MyLib/ITC/ITC.h"
+#include <vector>
 
 class Timer
 {
 public:
-    class Listener
+    class EventId
+    {
+        friend class Timer;
+    private:
+        EventId(uint32_t newId) : myId(newId) {}
+        uint32_t myId;
+    };
+    class EventCatcher
     {
     public:
-        Listener() {}
-        virtual ~Listener() {}
-
-        virtual void catch_time_event(time_t eventTime, uint32_t token) = 0;
+        virtual void catch_timed_event(uint32_t eventId, std::chrono::time_point<std::chrono::steady_clock> eventTime) {}
     };
     Timer();
-    virtual ~Timer();
-
-    void terminate();
-    void time_changed();
-    void add_time_event(time_t eventTime, std::weak_ptr<Listener> listener, uint32_t token = 0, time_t interval = 0);
+    ~Timer();
+    EventId add_event(
+        std::weak_ptr<EventCatcher> listener,
+        std::chrono::time_point<std::chrono::steady_clock> eventTime,
+        std::chrono::milliseconds repeatInterval = std::chrono::milliseconds(0));
+    bool remove_event(EventId eventId);
+    void start();
+    void stop();
 
 private:
-    enum class Command
-    {
-        AddEvent,
-        TimeChanged,
-        Terminate
-    };
-    struct ListenerData
-    {
-        std::weak_ptr<Listener> listener;
-        time_t interval;
-        uint32_t token;
-    };
-    std::map<time_t, std::vector<ListenerData>> second2ListenerListMap;
+    static void process(Timer *theTimer);
 
-    struct Message
+    struct EventData
     {
-        Command command;
-        time_t eventTime;
-        std::weak_ptr<Listener> listener;
-        time_t interval;
-        uint32_t token;
+        EventData(std::weak_ptr<EventCatcher> inCatcher, std::chrono::milliseconds inInterval, uint32_t inId)
+            : catcher(inCatcher), interval(inInterval), myId(inId) {}
+        std::weak_ptr<EventCatcher> catcher;
+        std::chrono::milliseconds interval;
+        uint32_t myId;
     };
-
-    std::unique_ptr<std::thread> theProcess;
-    ITC<Message> itc;
-    std::unique_ptr<ITC<Message>::FixedSocket> eventSocket;
-    std::unique_ptr<ITC<Message>::FixedSocket> threadSocket;
-    size_t processState = 0;
-
-    static void thread_process(Timer *me);
+    bool mTerminate = false;
+    std::mutex mCVMutex;
+    std::condition_variable mConditionVariable;
+    std::mutex mDataMutex;
+    std::multimap<std::chrono::time_point<std::chrono::steady_clock>, EventData> mEventDataMap;
+    uint32_t nextId = 1;
+    std::vector<uint32_t> freeId;
+    std::thread *threadProcess;
 };
-
-#endif

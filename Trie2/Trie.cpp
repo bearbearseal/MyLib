@@ -83,8 +83,10 @@ pair<size_t, unordered_set<const string*>> Trie::find_string(const string &word,
     // Already check to the last character of the word
     if (index >= word.size())
     {
+        debugger.write("Index: %zu Size: %zu\n", index, word.size());
         if (!value.empty())
         {
+            debugger.write("Found %s distance: %zu\n", value.c_str(), distance);
             return {distance, {&value}};
         }
         else if (distance == 0)
@@ -108,12 +110,20 @@ pair<size_t, unordered_set<const string*>> Trie::find_string(const string &word,
     auto theChild = children.find(word.at(index));
     if (theChild != children.end())
     {
+        debugger.add_tab();
         singleResult = theChild->second->find_string(word, distance, index+1);
+        debugger.minus_tab();
+        debugger.write("From Child, distance %zu:\n", singleResult.first);
+        for(auto i=singleResult.second.begin(); i!=singleResult.second.end(); ++i)
+        {
+            debugger.write("%s\n", (*i)->c_str());
+        }
         combine_best_to_result1(result, singleResult);
-        //distance = distance - singleResult.first;
+        distance = distance - singleResult.first;
     }
     if (distance > 0)
     {
+        debugger.write("Unmatch search, distance %zu.\n", distance);
         // Find result from if next character is a wrong
         singleResult = find_string_this_character_is_wrong(word, distance, index); 
         combine_best_to_result1(result, singleResult);

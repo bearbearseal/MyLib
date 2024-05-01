@@ -7,6 +7,7 @@
 #include <string>
 #include <memory>
 #include <string_view>
+#include "printfter.h"
 
 class Trie
 {
@@ -29,6 +30,7 @@ private:
 private:
     std::string value;
     std::unordered_map<char, Trie *> children;
+    Printfter debugger;
 };
 
 #endif
