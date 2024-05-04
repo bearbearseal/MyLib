@@ -25,7 +25,7 @@ void thread_process_1(ServerClientItc<int, string>* itc)
         auto messagePair = serverSocket->get_message();
         if(messagePair.has_value())
         {
-            printf("Server socket message: %d, Source: %zu\n", messagePair.value().message, messagePair.value().sourceId.id);
+            printf("Server socket message: %d, Source: %zu\n", messagePair.value().message, messagePair.value().sourceId.get_id());
             this_thread::sleep_for(500ms);
             ms = chrono::duration_cast<chrono::milliseconds >(chrono::system_clock::now().time_since_epoch());
             printf("Server socket send message at %zu\n", ms.count());

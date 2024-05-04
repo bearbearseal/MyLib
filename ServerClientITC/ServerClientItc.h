@@ -22,18 +22,41 @@ public:
     };
     class ClientId
     {
-        friend class ServerMessagePair;
-    //private:
+        friend class ServerClientItc;
+
     public:
+        size_t get_id() { return id; }
+
+    private:
         ClientId(size_t _id) : id(_id) {}
         size_t id;
     };
     struct ServerMessagePair
     {
-        ServerMessagePair(const ClientId newId, const Message2Server& inMessage) : sourceId(newId), message(inMessage) {}
-        ServerMessagePair(const ClientId newId, Message2Server&& inMessage) : sourceId(newId)
+        ServerMessagePair(const ClientId newId, const Message2Server &inMessage) : sourceId(newId), message(inMessage) {}
+        ServerMessagePair(const ClientId newId, Message2Server &&inMessage) : sourceId(newId)
         {
-            message = move(inMessage);
+            message = std::move(inMessage);
+        }
+        ServerMessagePair(const ServerMessagePair &other) : sourceId(other.sourceId.get_id())
+        {
+            message = other.message;
+        }
+        ServerMessagePair(ServerMessagePair &&other) : sourceId(other.sourceId.get_id())
+        {
+            message = std::move(other.message);
+        }
+        ServerMessagePair& operator=(const ServerMessagePair &other)
+        {
+            sourceId = other.sourceId;
+            message = other.message;
+            return *this;
+        }
+        ServerMessagePair& operator=(ServerMessagePair&& other)
+        {
+            sourceId = other.sourceId;
+            message = move(other.message);
+            return *this;
         }
         ClientId sourceId;
         Message2Server message;
@@ -53,7 +76,7 @@ private:
         ~Proxy() {}
         void server_to_client(ClientId clientId, Message2Client &&message)
         {
-            master.server_to_client(clientId.id, move(message));
+            master.server_to_client(clientId.id, std::move(message));
         }
         void server_to_client(ClientId clientId, const Message2Client &message)
         {
@@ -61,7 +84,7 @@ private:
         }
         void client_to_server(ClientId clientId, Message2Server &&message)
         {
-            master.client_to_server(clientId.id, move(message));
+            master.client_to_server(clientId.id, std::move(message));
         }
         void client_to_server(ClientId clientId, const Message2Server &message)
         {
@@ -123,7 +146,7 @@ public:
             auto shared = master.lock();
             if (shared == nullptr)
                 return false;
-            shared->server_to_client(clientId, move(message));
+            shared->server_to_client(clientId, std::move(message));
             return true;
         }
         bool send_message(ClientId clientId, const Message2Client &message)
@@ -187,7 +210,7 @@ public:
             auto shared = master.lock();
             if (shared == nullptr)
                 return false;
-            shared->client_to_server(myId.id, move(message));
+            shared->client_to_server(myId.id, std::move(message));
             return true;
         }
         bool send_message(const Message2Server &message)
@@ -267,7 +290,7 @@ private:
     {
         ClientData &theData = clientsData.clientData[clientId];
         std::lock_guard<std::mutex> lock(theData.messageMutex);
-        theData.messages.push_back(move(message));
+        theData.messages.push_back(std::move(message));
         theData.waitCondition.notify_one();
     }
     void server_to_client(size_t clientId, const Message2Client &message)
@@ -280,7 +303,7 @@ private:
     void client_to_server(size_t clientId, Message2Server &&message)
     {
         std::lock_guard<std::mutex> lock(serverData.messageMutex);
-        serverData.messages.push_back({clientId, move(message)});
+        serverData.messages.push_back({clientId, std::move(message)});
         serverData.waitCondition.notify_one();
     }
     void client_to_server(size_t clientId, const Message2Server &message)
