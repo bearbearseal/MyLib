@@ -58,88 +58,31 @@ public:
 
     void send_message(ItcClientId clientId, Message2Client &&message)
     {
-        server_to_client(clientId.get_id(), std::move(message));
+        std::unique_ptr<ClientData> &theData = clientsData.clientData[clientId.get_id()];
+        std::lock_guard<std::mutex> lock(theData->messageMutex);
+        theData->messages.push_back(std::move(message));
+        theData->waitCondition.notify_one();
     }
     void send_message(ItcClientId clientId, const Message2Client &message)
     {
-        server_to_client(clientId.get_id(), message);
+        std::unique_ptr<ClientData> &theData = clientsData.clientData[clientId.get_id()];
+        std::lock_guard<std::mutex> lock(theData->messageMutex);
+        theData->messages.push_back(message);
+        theData->waitCondition.notify_one();
     }
     void wait_message()
     {
-        wait_server_message();
+        // Lock the wait mutex, so that it could be signaled
+        std::unique_lock<std::mutex> waitLock(serverData.waitMutex);
+        // Check if already got message.
+        {
+            std::lock_guard<std::mutex> messageLock(serverData.messageMutex);
+            if (!serverData.messages.empty())
+                return;
+        }
+        serverData.waitCondition.wait(waitLock);
     }
     bool wait_message(std::chrono::duration<uint64_t, std::micro> timeout)
-    {
-        return wait_server_message(timeout);
-    }
-    std::optional<ServerMessagePair> get_message()
-    {
-        return get_server_message();
-    }
-    bool has_message()
-    {
-        return server_has_message();
-    }
-    ItcClient<Message2Server, Message2Client> get_client()
-    {
-        uint32_t nextId = 0;
-        {
-            std::lock_guard<std::mutex> lockG(clientsData.idMutex);
-            if(!clientsData.availableId.empty())
-            {
-                nextId = clientsData.availableId[clientsData.availableId.size() - 1];
-                clientsData.availableId.pop_back();
-            }
-            else
-            {
-                nextId = clientsData.nextId;
-                ++clientsData.nextId;
-                clientsData.clientData.emplace_back(std::move(std::make_unique<ClientData>()));
-            }
-        }
-       return ItcClient<Message2Server, Message2Client>(nextId, *this);
-    }
-
-private:
-    void server_to_client(uint32_t clientId, Message2Client &&message)
-    {
-        ClientData &theData = clientsData.clientData[clientId];
-        std::lock_guard<std::mutex> lock(theData.messageMutex);
-        theData.messages.push_back(std::move(message));
-        theData.waitCondition.notify_one();
-    }
-    void server_to_client(uint32_t clientId, const Message2Client &message)
-    {
-        ClientData &theData = clientsData.clientData[clientId];
-        std::lock_guard<std::mutex> lock(theData.messageMutex);
-        theData.messages.push_back(message);
-        theData.waitCondition.notify_one();
-    }
-    void client_to_server(uint32_t clientId, Message2Server &&message)
-    {
-        std::lock_guard<std::mutex> lock(serverData.messageMutex);
-        serverData.messages.push_back({clientId, std::move(message)});
-        serverData.waitCondition.notify_one();
-    }
-    void client_to_server(uint32_t clientId, const Message2Server &message)
-    {
-        std::lock_guard<std::mutex> lock(serverData.messageMutex);
-        serverData.messages.push_back({clientId, message});
-        serverData.waitCondition.notify_one();
-    }
-    void return_client_socket_to_pool(uint32_t clientId)
-    {
-        {
-            ClientData &theData = clientsData.clientData[clientId];
-            std::lock_guard<std::mutex> lock(theData.messageMutex);
-            theData.messages.clear();
-        }
-        {
-            std::lock_guard<std::mutex> lock(clientsData.idMutex);
-            clientsData.availableId.push_back(clientId);
-        }
-    }
-    bool wait_server_message(std::chrono::duration<uint64_t, std::micro> timeout)
     {
         // Lock the wait mutex, so that it could be signaled
         std::unique_lock<std::mutex> waitLock(serverData.waitMutex);
@@ -155,47 +98,7 @@ private:
             return false;
         return true;
     }
-    void wait_server_message()
-    {
-        // Lock the wait mutex, so that it could be signaled
-        std::unique_lock<std::mutex> waitLock(serverData.waitMutex);
-        // Check if already got message.
-        {
-            std::lock_guard<std::mutex> messageLock(serverData.messageMutex);
-            if (!serverData.messages.empty())
-                return;
-        }
-        serverData.waitCondition.wait(waitLock);
-    }
-    bool wait_client_message(uint32_t clientId, std::chrono::duration<uint64_t, std::micro> timeout)
-    {
-        ClientData &theData = clientsData.clientData[clientId];
-        std::unique_lock<std::mutex> waitLock(theData.waitMutex);
-        // Check if already got message
-        {
-            std::lock_guard<std::mutex> mesageLock(theData.messageMutex);
-            if (!theData.messages.empty())
-                return true;
-        }
-        auto result = theData.waitCondition.wait_for(waitLock, timeout);
-        // Check Result
-        if (result == std::cv_status::timeout)
-            return false;
-        return true;
-    }
-    void wait_client_message(uint32_t clientId)
-    {
-        ClientData &theData = clientsData.clientData[clientId];
-        std::unique_lock<std::mutex> waitLock(theData.waitMutex);
-        // Check if already got message.
-        {
-            std::lock_guard<std::mutex> messageLock(theData.messageMutex);
-            if (!theData.messages.empty())
-                return;
-        }
-        theData.waitCondition.wait(waitLock);
-    }
-    std::optional<ServerMessagePair> get_server_message()
+    std::optional<ServerMessagePair> get_message()
     {
         std::lock_guard<std::mutex> lock(serverData.messageMutex);
         if (serverData.messages.empty())
@@ -205,6 +108,88 @@ private:
         ServerMessagePair retVal = std::move(serverData.messages.front());
         serverData.messages.pop_front();
         return retVal;
+    }
+    bool has_message()
+    {
+        std::lock_guard<std::mutex> lock(serverData.messageMutex);
+        if (serverData.messages.empty())
+        {
+            return false;
+        }
+        return true;
+    }
+    ItcClient<Message2Server, Message2Client> get_client()
+    {
+        uint32_t nextId = 0;
+        {
+            std::lock_guard<std::mutex> lockG(clientsData.idMutex);
+            if (!clientsData.availableId.empty())
+            {
+                nextId = clientsData.availableId[clientsData.availableId.size() - 1];
+                clientsData.availableId.pop_back();
+            }
+            else
+            {
+                nextId = clientsData.nextId;
+                ++clientsData.nextId;
+                clientsData.clientData.emplace_back(std::move(std::make_unique<ClientData>()));
+            }
+        }
+        return ItcClient<Message2Server, Message2Client>(nextId, *this);
+    }
+
+private:
+    void client_to_server(ItcClientId clientId, Message2Server &&message)
+    {
+        std::lock_guard<std::mutex> lock(serverData.messageMutex);
+        serverData.messages.push_back({clientId, std::move(message)});
+        serverData.waitCondition.notify_one();
+    }
+    void client_to_server(ItcClientId clientId, const Message2Server &message)
+    {
+        std::lock_guard<std::mutex> lock(serverData.messageMutex);
+        serverData.messages.push_back({clientId, message});
+        serverData.waitCondition.notify_one();
+    }
+    void return_client_socket_to_pool(ItcClientId clientId)
+    {
+        {
+            std::unique_ptr<ClientData> &theData = clientsData.clientData[clientId.get_id()];
+            std::lock_guard<std::mutex> lock(theData->messageMutex);
+            theData->messages.clear();
+        }
+        {
+            std::lock_guard<std::mutex> lock(clientsData.idMutex);
+            clientsData.availableId.push_back(clientId.get_id());
+        }
+    }
+    bool wait_client_message(ItcClientId clientId, std::chrono::duration<uint64_t, std::micro> timeout)
+    {
+        std::unique_ptr<ClientData> &theData = clientsData.clientData[clientId.get_id()];
+        std::unique_lock<std::mutex> waitLock(theData->waitMutex);
+        // Check if already got message
+        {
+            std::lock_guard<std::mutex> mesageLock(theData->messageMutex);
+            if (!theData->messages.empty())
+                return true;
+        }
+        auto result = theData->waitCondition.wait_for(waitLock, timeout);
+        // Check Result
+        if (result == std::cv_status::timeout)
+            return false;
+        return true;
+    }
+    void wait_client_message(ItcClientId clientId)
+    {
+        std::unique_ptr<ClientData> &theData = clientsData.clientData[clientId.get_id()];
+        std::unique_lock<std::mutex> waitLock(theData->waitMutex);
+        // Check if already got message.
+        {
+            std::lock_guard<std::mutex> messageLock(theData->messageMutex);
+            if (!theData->messages.empty())
+                return;
+        }
+        theData->waitCondition.wait(waitLock);
     }
     std::optional<Message2Client> get_client_message(ItcClientId clientId)
     {
@@ -217,15 +202,6 @@ private:
         Message2Client retVal = std::move(theData->messages.front());
         theData->messages.pop_front();
         return retVal;
-    }
-    bool server_has_message()
-    {
-        std::lock_guard<std::mutex> lock(serverData.messageMutex);
-        if (serverData.messages.empty())
-        {
-            return false;
-        }
-        return true;
     }
     bool client_has_message(ItcClientId clientId)
     {
@@ -278,19 +254,19 @@ public:
     ~ItcClient() {}
     void send_message(Message2Server &&message)
     {
-        master.client_to_server(id.get_id(), std::move(message));
+        master.client_to_server(id, std::move(message));
     }
     void send_message(const Message2Server &message)
     {
-        master.client_to_server(id.get_id(), message);
+        master.client_to_server(id, message);
     }
     void wait_message()
     {
-        master.wait_client_message(id.get_id());
+        master.wait_client_message(id);
     }
     bool wait_message(std::chrono::duration<uint64_t, std::micro> timeout)
     {
-        return master.wait_client_message(id.get_id(), timeout);
+        return master.wait_client_message(id, timeout);
     }
     std::optional<Message2Client> get_message()
     {
